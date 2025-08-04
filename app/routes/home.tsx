@@ -1,13 +1,13 @@
-import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { HomePage } from "~/pages/HomePage"
+import type { Route } from "./+types/home"
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
+    { title: "Trezzo - Produits digitaux instantanés" },
+    { name: "description", content: "Des produits digitaux, disponibles instantanément." },
+  ]
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <HomePage />
 }

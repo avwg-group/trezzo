@@ -1,22 +1,34 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
-WORKDIR /app
-RUN npm ci
+# Version optimisée avec étapes plus rapides
+FROM node:20-alpine AS base
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
-WORKDIR /app
-RUN npm ci --omit=dev
+# Installer pnpm une seule fois
+RUN npm install -g pnpm
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+# Étape des dépendances
+FROM base AS deps
 WORKDIR /app
-RUN npm run build
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
+# Étape de build
+FROM base AS builder
 WORKDIR /app
-CMD ["npm", "run", "start"]
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN pnpm run build
+
+# Étape de production
+FROM base AS runner
+WORKDIR /app
+
+# Copier seulement les fichiers nécessaires
+COPY --from=builder /app/build ./build
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+
+# Configuration du port 
+EXPOSE 3049
+ENV PORT=3049
+
+# Démarrer l'application
+CMD ["pnpm", "run", "start"]
