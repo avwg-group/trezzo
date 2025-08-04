@@ -47,11 +47,11 @@ const productData = {
 
 // Logos des moyens de paiement
 const paymentMethods = [
-  { name: "Visa", logo: "💳" },
-  { name: "Mastercard", logo: "💳" },
-  { name: "PayPal", logo: "🅿️" },
-  { name: "Apple Pay", logo: "🍎" },
-  { name: "Google Pay", logo: "🔵" }
+  { name: "Visa", logo: "/images/visa.png" },
+  { name: "Mastercard", logo: "/images/mastercard.svg" },
+  { name: "Orange Money", logo: "/images/orangemoney.svg" },
+  { name: "Airtel", logo: "/images/airtel.png" },
+  { name: "MTN MONEY", logo: "/images/mtnmoney.svg" }
 ]
 
 // Avis clients
@@ -387,17 +387,21 @@ export function ProductDetailPage() {
                       Acheter maintenant
                     </Button>
                     
-                    {/* Logos moyens de paiement */}
+                    {/* Payment methods logos */}
                     <div className="border-t pt-4">
                       <p className="text-sm text-muted-foreground mb-3 text-center">Moyens de paiement acceptés</p>
-                      <div className="flex justify-center items-center gap-3">
+                      <div className="flex justify-center items-center gap-4">
                         {paymentMethods.map((method, index) => (
                           <div 
                             key={index}
-                            className="w-10 h-6 bg-card border rounded flex items-center justify-center text-lg shadow-sm"
+                            className="w-12 h-8 bg-white rounded-md shadow-sm border border-gray-100 flex items-center justify-center p-1 transition-all hover:shadow-md"
                             title={method.name}
                           >
-                            {method.logo}
+                            <img 
+                              src={method.logo} 
+                              alt={method.name} 
+                              className="w-full h-full object-contain opacity-90 hover:opacity-100"
+                            />
                           </div>
                         ))}
                       </div>
