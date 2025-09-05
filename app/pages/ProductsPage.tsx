@@ -64,7 +64,6 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState(loaderData.filters.category)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [categoryOpen, setCategoryOpen] = useState(false)
-  const [sortOpen, setSortOpen] = useState(false)
 
   const { products, pagination, shop, categories, filters, error } = loaderData
 
@@ -94,16 +93,16 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
     navigate(`?${params.toString()}`, { replace: true })
   }
 
-  // Gestion de la recherche avec debounce optimisé
+  // Gestion de la recherche avec debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchTerm !== filters.search) {
         updateFilters({ search: searchTerm, page: 1 })
       }
-    }, 300) // Réduit à 300ms pour une meilleure réactivité
+    }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm])
+  }, [searchTerm, filters.search])
 
   // Gestion du changement de catégorie
   const handleCategoryChange = (category: string) => {
@@ -124,12 +123,11 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
   }
 
   const selectedCategoryLabel = categoriesWithCount.find(cat => cat.value === selectedCategory)?.label || "Toutes les catégories"
-  const currentSortOption = sortOptions.find(opt => opt.value === filters.sortBy && opt.order === filters.sortOrder)
 
-  // Gestion des erreurs avec page d'erreur premium
+  // Gestion des erreurs
   if (error) {
     return (
-      <Layout>
+      <Layout logo_url={shop?.logo_url} shop_name={shop?.name}>
         <ErrorPageVariants.DataLoading 
           title="Erreur de chargement"
           message={error}
@@ -140,141 +138,141 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
   }
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header Premium */}
-          <div className="mb-8">
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-2">
-                {shop?.name ? `${shop.name}` : 'Boutique'}
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 mb-6">
-                Découvrez notre collection de {products.length} produits premium
-              </p>
-              
-              {/* Barre de recherche et filtres premium */}
-              <div className="flex flex-col lg:flex-row gap-4">
-                {/* Recherche */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <Input 
-                    placeholder="Rechercher un produit..." 
-                    className="pl-12 h-12 bg-white/50 dark:bg-slate-700/50 border-slate-200/50 dark:border-slate-600/50 rounded-xl shadow-sm focus:shadow-md transition-all duration-200"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                
-                {/* Catégories */}
-                <div className="w-full lg:w-[250px]">
-                  <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={categoryOpen}
-                        className="w-full justify-between h-12 bg-white/50 dark:bg-slate-700/50 border-slate-200/50 dark:border-slate-600/50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex items-center">
-                          <Filter className="mr-2 h-4 w-4" />
-                          {selectedCategoryLabel}
-                        </div>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[250px] p-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50">
-                      <Command>
-                        <CommandInput placeholder="Rechercher une catégorie..." />
-                        <CommandList>
-                          <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
-                          <CommandGroup>
-                            {categoriesWithCount.map((category) => (
-                              <CommandItem
-                                key={category.value}
-                                value={category.label}
-                                onSelect={() => {
-                                  handleCategoryChange(category.value)
-                                  setCategoryOpen(false)
-                                }}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      selectedCategory === category.value ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {category.label}
-                                </div>
-                                <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">
-                                  {category.count}
-                                </span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                {/* Tri */}
-                <div className="w-full lg:w-[200px]">
-                  <Select value={`${filters.sortBy}-${filters.sortOrder}`} onValueChange={handleSortChange}>
-                    <SelectTrigger className="h-12 bg-white/50 dark:bg-slate-700/50 border-slate-200/50 dark:border-slate-600/50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
-                      <div className="flex items-center">
-                        {filters.sortOrder === 'asc' ? <SortAsc className="mr-2 h-4 w-4" /> : <SortDesc className="mr-2 h-4 w-4" />}
-                        <SelectValue placeholder="Trier par" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50">
-                      {sortOptions.map((option) => (
-                        <SelectItem key={`${option.value}-${option.order}`} value={`${option.value}-${option.order}`}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Mode d'affichage */}
-                <div className="flex bg-white/50 dark:bg-slate-700/50 rounded-xl p-1 shadow-sm">
+    <Layout logo_url={shop?.logo_url} shop_name={shop?.name}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-6">
+          {/* Header simple */}
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {shop?.name || 'Boutique'}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
+              {products.length} produit{products.length > 1 ? 's' : ''} disponible{products.length > 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Barre de recherche mobile-first */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input 
+                placeholder="Rechercher un produit..." 
+                className="pl-10 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Filtres et tri - Layout mobile-first */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            {/* Catégories */}
+            <div className="flex-1">
+              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                <PopoverTrigger asChild>
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className="rounded-lg"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryOpen}
+                    className="w-full justify-between h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                   >
-                    <Grid3X3 className="h-4 w-4" />
+                    <div className="flex items-center truncate">
+                      <Filter className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{selectedCategoryLabel}</span>
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="rounded-lg"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Command>
+                    <CommandInput placeholder="Rechercher une catégorie..." />
+                    <CommandList>
+                      <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
+                      <CommandGroup>
+                        {categoriesWithCount.map((category) => (
+                          <CommandItem
+                            key={category.value}
+                            value={category.label}
+                            onSelect={() => {
+                              handleCategoryChange(category.value)
+                              setCategoryOpen(false)
+                            }}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center">
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCategory === category.value ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {category.label}
+                            </div>
+                            <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                              {category.count}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            {/* Tri */}
+            <div className="flex-1">
+              <Select value={`${filters.sortBy}-${filters.sortOrder}`} onValueChange={handleSortChange}>
+                <SelectTrigger className="h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center">
+                    {filters.sortOrder === 'asc' ? <SortAsc className="mr-2 h-4 w-4" /> : <SortDesc className="mr-2 h-4 w-4" />}
+                    <SelectValue placeholder="Trier par" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  {sortOptions.map((option) => (
+                    <SelectItem key={`${option.value}-${option.order}`} value={`${option.value}-${option.order}`}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Mode d'affichage */}
+            <div className="flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="h-8 px-3"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="h-8 px-3"
+              >
+                <List className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
           {/* Résultats */}
           {products.length > 0 ? (
             <>
-              {/* Grille de produits */}
+              {/* Grille de produits - Mobile-first responsive */}
               <div className={cn(
                 "mb-8",
                 viewMode === 'grid' 
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
                   : "space-y-4"
               )}>
                 {products.map((product) => (
                   <div key={product.id} className={cn(
-                    "bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]",
+                    "bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow duration-200",
                     viewMode === 'list' && "flex flex-row"
                   )}>
                     <ProductCard 
@@ -294,12 +292,12 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                 ))}
               </div>
 
-              {/* Pagination Premium */}
+              {/* Pagination simple */}
               {pagination && pagination.total_pages > 1 && (
-                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Affichage de {((pagination.current_page - 1) * pagination.items_per_page) + 1} à {Math.min(pagination.current_page * pagination.items_per_page, pagination.total_items)} sur {pagination.total_items} produits
+                    <div className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
+                      {((pagination.current_page - 1) * pagination.items_per_page) + 1} - {Math.min(pagination.current_page * pagination.items_per_page, pagination.total_items)} sur {pagination.total_items}
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -308,7 +306,7 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                         size="sm"
                         onClick={() => handlePageChange(pagination.current_page - 1)}
                         disabled={!pagination.has_prev}
-                        className="rounded-lg"
+                        className="h-8"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
@@ -326,7 +324,7 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                             variant={pagination.current_page === page ? "default" : "outline"} 
                             size="sm"
                             onClick={() => handlePageChange(page)}
-                            className="rounded-lg min-w-[40px]"
+                            className="h-8 min-w-[32px]"
                           >
                             {page}
                           </Button>
@@ -338,7 +336,7 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                         size="sm"
                         onClick={() => handlePageChange(pagination.current_page + 1)}
                         disabled={!pagination.has_next}
-                        className="rounded-lg"
+                        className="h-8"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Button>
@@ -348,18 +346,18 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
               )}
             </>
           ) : (
-            /* Message premium quand aucun produit n'est trouvé */
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-white/20 text-center">
+            /* Message simple quand aucun produit */
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
               <div className="max-w-md mx-auto">
-                <div className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                  <Package className="h-12 w-12 text-slate-500" />
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Package className="h-8 w-8 text-gray-500" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-3">Aucun produit trouvé</h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Aucun produit trouvé</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                   {searchTerm || selectedCategory ? (
-                    <>Aucun produit ne correspond à vos critères de recherche. Essayez de modifier vos filtres.</>
+                    <>Aucun produit ne correspond à vos critères de recherche.</>
                   ) : (
-                    <>Il n'y a actuellement aucun produit disponible dans cette boutique.</>
+                    <>Il n'y a actuellement aucun produit disponible.</>
                   )}
                 </p>
                 {(searchTerm || selectedCategory) && (
@@ -369,7 +367,7 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                       setSelectedCategory("")
                       updateFilters({ search: "", category: "", page: 1 })
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                   >
                     Réinitialiser les filtres
                   </Button>
