@@ -16,7 +16,7 @@ export class ProductService {
       const queryString = params.toString();
       const endpoint = `/shop/client/products${queryString ? `?${queryString}` : ''}`;
       
-      console.log('🔍 Fetching products from:', endpoint);
+      console.log('🔍 Fetching products from: getProducts', endpoint);
       
       const response = await apiClient.get<ProductsResponse>(endpoint);
       return response;

@@ -38,6 +38,15 @@ export interface ProductsResponse {
   shop: Shop;
 }
 
+export interface ProductFilters {
+  page?: number;
+  limit?: number;
+  category?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface ProductsQueryParams {
   page?: number;
   limit?: number;
