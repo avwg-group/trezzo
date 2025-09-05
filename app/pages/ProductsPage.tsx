@@ -1,11 +1,23 @@
-import { useState, useEffect, useMemo } from "react"
-import { useNavigate, useSearchParams } from "react-router"
-import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import { Layout } from "~/components/Layout"
-import { ProductCard } from "~/components/ProductCard"
-import { Search, ChevronLeft, ChevronRight, Check, ChevronsUpDown, Package, Filter, SortAsc, SortDesc, Grid3X3, List } from "lucide-react"
-import { cn } from "~/lib/utils"
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Layout } from "~/components/Layout";
+import { ProductCard } from "~/components/ProductCard";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  ChevronsUpDown,
+  Package,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Grid3X3,
+  List,
+} from "lucide-react";
+import { cn } from "~/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -13,21 +25,21 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "~/components/ui/command"
+} from "~/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "~/components/ui/popover"
+} from "~/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select"
-import type { Product, Pagination } from "~/services/types"
-import { ErrorPageVariants } from './ErrorPage';
+} from "~/components/ui/select";
+import type { Product, Pagination } from "~/services/types";
+import { ErrorPageVariants } from "./ErrorPage";
 
 interface ProductsPageProps {
   loaderData: {
@@ -41,7 +53,7 @@ interface ProductsPageProps {
       category: string;
       search: string;
       sortBy: string;
-      sortOrder: 'asc' | 'desc';
+      sortOrder: "asc" | "desc";
     };
     error?: string;
   };
@@ -55,86 +67,158 @@ const sortOptions = [
   { label: "Nom A-Z", value: "product_name", order: "asc" },
   { label: "Nom Z-A", value: "product_name", order: "desc" },
   { label: "Mieux notés", value: "average_rating", order: "desc" },
-]
+];
+
+const ITEMS_PER_PAGE = 12;
 
 export function ProductsPage({ loaderData }: ProductsPageProps) {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [searchTerm, setSearchTerm] = useState(loaderData.filters.search)
-  const [selectedCategory, setSelectedCategory] = useState(loaderData.filters.category)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [categoryOpen, setCategoryOpen] = useState(false)
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(loaderData.filters.search);
+  const [selectedCategory, setSelectedCategory] = useState(
+    loaderData.filters.category
+  );
+  const [sortBy, setSortBy] = useState(
+    loaderData.filters.sortBy || "created_at"
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
+    loaderData.filters.sortOrder || "desc"
+  );
+  const [currentPage, setCurrentPage] = useState(loaderData.filters.page || 1);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
-  const { products, pagination, shop, categories, filters, error } = loaderData
+  const { products: allProducts, shop, categories, error } = loaderData;
 
-  // Préparer les catégories avec compteurs
+  // Filtrage et tri côté frontend
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = [...allProducts];
+
+    // Filtrage par recherche
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (product) =>
+          product.product_name
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          product.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtrage par catégorie
+    if (selectedCategory) {
+      filtered = filtered.filter(
+        (product) => product.category === selectedCategory
+      );
+    }
+
+    // Tri
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+
+      switch (sortBy) {
+        case "price":
+          aValue = parseFloat(a.price);
+          bValue = parseFloat(b.price);
+          break;
+        case "product_name":
+          aValue = a.product_name.toLowerCase();
+          bValue = b.product_name.toLowerCase();
+          break;
+        case "average_rating":
+          aValue = a.average_rating || 0;
+          bValue = b.average_rating || 0;
+          break;
+        case "created_at":
+        default:
+          aValue = new Date(a.created_at || 0).getTime();
+          bValue = new Date(b.created_at || 0).getTime();
+          break;
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [allProducts, searchTerm, selectedCategory, sortBy, sortOrder]);
+
+  // Pagination côté frontend
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredAndSortedProducts.slice(startIndex, endIndex);
+  }, [filteredAndSortedProducts, currentPage]);
+
+  // Calcul de la pagination
+  const totalPages = Math.ceil(
+    filteredAndSortedProducts.length / ITEMS_PER_PAGE
+  );
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
+
+  // Préparer les catégories avec compteurs (basé sur tous les produits)
   const categoriesWithCount = useMemo(() => {
-    const allCategory = { label: "Toutes les catégories", value: "", count: products.length }
-    const categoryList = categories.map(cat => ({
+    const allCategory = {
+      label: "Toutes les catégories",
+      value: "",
+      count: allProducts.length,
+    };
+    const categoryList = categories.map((cat) => ({
       label: cat,
       value: cat,
-      count: products.filter(p => p.category === cat).length
-    }))
-    return [allCategory, ...categoryList]
-  }, [categories, products])
-
-  // Fonction pour mettre à jour les paramètres d'URL
-  const updateFilters = (newFilters: Partial<typeof filters>) => {
-    const params = new URLSearchParams(searchParams)
-    
-    Object.entries({ ...filters, ...newFilters }).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 1) {
-        params.set(key, value.toString())
-      } else if (key !== 'page' && key !== 'limit') {
-        params.delete(key)
-      }
-    })
-    
-    navigate(`?${params.toString()}`, { replace: true })
-  }
+      count: allProducts.filter((p) => p.category === cat).length,
+    }));
+    return [allCategory, ...categoryList];
+  }, [categories, allProducts]);
 
   // Gestion de la recherche avec debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm !== filters.search) {
-        updateFilters({ search: searchTerm, page: 1 })
-      }
-    }, 300)
+      setCurrentPage(1); // Reset à la page 1 lors d'une recherche
+    }, 300);
 
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, filters.search])
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   // Gestion du changement de catégorie
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category)
-    updateFilters({ category, page: 1 })
-  }
+    setSelectedCategory(category);
+    setCurrentPage(1);
+  };
 
   // Gestion du tri
   const handleSortChange = (sortValue: string) => {
-    const [sortBy, sortOrder] = sortValue.split('-')
-    updateFilters({ sortBy, sortOrder: sortOrder as 'asc' | 'desc', page: 1 })
-  }
+    const [newSortBy, newSortOrder] = sortValue.split("-");
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder as "asc" | "desc");
+    setCurrentPage(1);
+  };
 
   // Gestion de la pagination
   const handlePageChange = (page: number) => {
-    updateFilters({ page })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  const selectedCategoryLabel = categoriesWithCount.find(cat => cat.value === selectedCategory)?.label || "Toutes les catégories"
+  const selectedCategoryLabel =
+    categoriesWithCount.find((cat) => cat.value === selectedCategory)?.label ||
+    "Toutes les catégories";
 
   // Gestion des erreurs
   if (error) {
     return (
       <Layout logo_url={shop?.logo_url} shop_name={shop?.name}>
-        <ErrorPageVariants.DataLoading 
+        <ErrorPageVariants.DataLoading
           title="Erreur de chargement"
           message={error}
           onRetry={() => window.location.reload()}
         />
       </Layout>
-    )
+    );
   }
 
   return (
@@ -144,30 +228,38 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
           {/* Header simple */}
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {shop?.name || 'Boutique'}
+              {shop?.name || "Boutique"}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
-              {products.length} produit{products.length > 1 ? 's' : ''} disponible{products.length > 1 ? 's' : ''}
+              {filteredAndSortedProducts.length} produit
+              {filteredAndSortedProducts.length > 1 ? "s" : ""} disponible
+              {filteredAndSortedProducts.length > 1 ? "s" : ""}
+              {(searchTerm || selectedCategory) && (
+                <span className="ml-2 text-blue-600 dark:text-blue-400">
+                  (sur {allProducts.length} total
+                  {allProducts.length > 1 ? "s" : ""})
+                </span>
+              )}
             </p>
           </div>
 
-          {/* Barre de recherche mobile-first */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input 
-                placeholder="Rechercher un produit..." 
-                className="pl-10 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          {/* Filtres et tri - Layout sur même ligne pour grand écran */}
+          <div className="flex flex-col lg:flex-row gap-3 mb-6 w-full">
+            {/* Barre de recherche mobile-first */}
+            <div className="flex-1 lg:flex-[9]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Rechercher un produit..."
+                  className="pl-10 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Filtres et tri - Layout mobile-first */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
             {/* Catégories */}
-            <div className="flex-1">
+            <div className="flex-1 lg:flex-[2]">
               <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -194,8 +286,8 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                             key={category.value}
                             value={category.label}
                             onSelect={() => {
-                              handleCategoryChange(category.value)
-                              setCategoryOpen(false)
+                              handleCategoryChange(category.value);
+                              setCategoryOpen(false);
                             }}
                             className="flex items-center justify-between"
                           >
@@ -203,7 +295,9 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  selectedCategory === category.value ? "opacity-100" : "opacity-0"
+                                  selectedCategory === category.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
                                 )}
                               />
                               {category.label}
@@ -219,40 +313,50 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             {/* Tri */}
-            <div className="flex-1">
-              <Select value={`${filters.sortBy}-${filters.sortOrder}`} onValueChange={handleSortChange}>
+            <div className="flex-1 lg:flex-[2]">
+              <Select
+                value={`${sortBy}-${sortOrder}`}
+                onValueChange={handleSortChange}
+              >
                 <SelectTrigger className="h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <div className="flex items-center">
-                    {filters.sortOrder === 'asc' ? <SortAsc className="mr-2 h-4 w-4" /> : <SortDesc className="mr-2 h-4 w-4" />}
+                    {sortOrder === "asc" ? (
+                      <SortAsc className="mr-2 h-4 w-4" />
+                    ) : (
+                      <SortDesc className="mr-2 h-4 w-4" />
+                    )}
                     <SelectValue placeholder="Trier par" />
                   </div>
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   {sortOptions.map((option) => (
-                    <SelectItem key={`${option.value}-${option.order}`} value={`${option.value}-${option.order}`}>
+                    <SelectItem
+                      key={`${option.value}-${option.order}`}
+                      value={`${option.value}-${option.order}`}
+                    >
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
-            {/* Mode d'affichage */}
-            <div className="flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
+
+            {/* Mode d'affichage - Sur la même ligne sur grand écran */}
+            <div className="flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 lg:flex-shrink-0 hidden">
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode("grid")}
                 className="h-8 px-3"
               >
                 <Grid3X3 className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode("list")}
                 className="h-8 px-3"
               >
                 <List className="h-4 w-4" />
@@ -261,31 +365,38 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
           </div>
 
           {/* Résultats */}
-          {products.length > 0 ? (
+          {paginatedProducts.length > 0 ? (
             <>
               {/* Grille de produits - Mobile-first responsive */}
-              <div className={cn(
-                "mb-8",
-                viewMode === 'grid' 
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
-                  : "space-y-4"
-              )}>
-                {products.map((product) => (
-                  <div key={product.id} className={cn(
-                    "bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow duration-200",
-                    viewMode === 'list' && "flex flex-row"
-                  )}>
-                    <ProductCard 
+              <div
+                className={cn(
+                  "mb-8",
+                  viewMode === "grid"
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                    : "space-y-4"
+                )}
+              >
+                {paginatedProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className={cn(
+                      "bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow duration-200",
+                      viewMode === "list" && "flex flex-row"
+                    )}
+                  >
+                    <ProductCard
                       product={{
                         id: product.id,
                         name: product.product_name,
                         price: `${product.price}€`,
-                        originalPrice: product.promo_price ? `${product.promo_price}€` : undefined,
+                        originalPrice: product.promo_price
+                          ? `${product.promo_price}€`
+                          : undefined,
                         image: product.product_image,
                         category: product.category,
                         rating: product.average_rating,
-                        reviewCount: product.review_count
-                      }} 
+                        reviewCount: product.review_count,
+                      }}
                       viewMode={viewMode}
                     />
                   </div>
@@ -293,49 +404,58 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
               </div>
 
               {/* Pagination simple */}
-              {pagination && pagination.total_pages > 1 && (
+              {totalPages > 1 && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
-                      {((pagination.current_page - 1) * pagination.items_per_page) + 1} - {Math.min(pagination.current_page * pagination.items_per_page, pagination.total_items)} sur {pagination.total_items}
+                      {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+                      {Math.min(
+                        currentPage * ITEMS_PER_PAGE,
+                        filteredAndSortedProducts.length
+                      )}{" "}
+                      sur {filteredAndSortedProducts.length}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handlePageChange(pagination.current_page - 1)}
-                        disabled={!pagination.has_prev}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={!hasPrevPage}
                         className="h-8"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      
-                      {Array.from({ length: Math.min(pagination.total_pages, 5) }, (_, i) => {
-                        const page = pagination.current_page <= 3 
-                          ? i + 1 
-                          : pagination.current_page + i - 2
-                        
-                        if (page > pagination.total_pages) return null
-                        
-                        return (
-                          <Button 
-                            key={page}
-                            variant={pagination.current_page === page ? "default" : "outline"} 
-                            size="sm"
-                            onClick={() => handlePageChange(page)}
-                            className="h-8 min-w-[32px]"
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
-                      
-                      <Button 
-                        variant="outline" 
+
+                      {Array.from(
+                        { length: Math.min(totalPages, 5) },
+                        (_, i) => {
+                          const page =
+                            currentPage <= 3 ? i + 1 : currentPage + i - 2;
+
+                          if (page > totalPages) return null;
+
+                          return (
+                            <Button
+                              key={page}
+                              variant={
+                                currentPage === page ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() => handlePageChange(page)}
+                              className="h-8 min-w-[32px]"
+                            >
+                              {page}
+                            </Button>
+                          );
+                        }
+                      )}
+
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handlePageChange(pagination.current_page + 1)}
-                        disabled={!pagination.has_next}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={!hasNextPage}
                         className="h-8"
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -352,20 +472,24 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                 <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                   <Package className="h-8 w-8 text-gray-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Aucun produit trouvé</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Aucun produit trouvé
+                </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                   {searchTerm || selectedCategory ? (
-                    <>Aucun produit ne correspond à vos critères de recherche.</>
+                    <>
+                      Aucun produit ne correspond à vos critères de recherche.
+                    </>
                   ) : (
                     <>Il n'y a actuellement aucun produit disponible.</>
                   )}
                 </p>
                 {(searchTerm || selectedCategory) && (
-                  <Button 
+                  <Button
                     onClick={() => {
-                      setSearchTerm("")
-                      setSelectedCategory("")
-                      updateFilters({ search: "", category: "", page: 1 })
+                      setSearchTerm("");
+                      setSelectedCategory("");
+                      setCurrentPage(1);
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                   >
@@ -378,5 +502,5 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
         </div>
       </div>
     </Layout>
-  )
+  );
 }
