@@ -154,16 +154,8 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                 )}
               </div>
               <h1 className="text-2xl font-bold mb-4">{product.product_name}</h1>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
-                {originalPrice && (
-                  <span className="text-xl text-muted-foreground line-through decoration-2 decoration-destructive">
-                    {formatPrice(originalPrice)}
-                  </span>
-                )}
-              </div>
             </div>
-
+                
             {/* Titre et prix desktop */}
             <div className="hidden lg:block">
               <div className="flex items-center gap-2 mb-2">
@@ -180,14 +172,6 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
               className="text-lg text-muted-foreground leading-relaxed prose prose-slate max-w-none"
               dangerouslySetInnerHTML={{ __html: product.description }}
             />
-
-            {/* CTA mobile */}
-            <div className="lg:hidden">
-              <Button size="lg" className="w-full mb-4">
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Acheter maintenant
-              </Button>
-            </div>
 
             {/* FAQ Section */}
             {faqItems.length > 0 && (
@@ -338,50 +322,57 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                   </CardContent>
                 </Card>
               </div>
-              
-              {/* Version mobile sticky bottom */}
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-50">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
-                      {originalPrice && (
-                        <span className="text-lg text-muted-foreground line-through decoration-2 decoration-destructive">
-                          {formatPrice(originalPrice)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Button size="lg" className="flex-1">
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Acheter
-                  </Button>
-                </div>
-                
-                {/* Logos moyens de paiement mobile */}
-                <div className="flex justify-center items-center gap-2">
-                  {paymentMethods.map((method, index) => (
-                    <div 
-                      key={index}
-                      className="w-8 h-5 bg-card border rounded flex items-center justify-center text-sm shadow-sm"
-                      title={method.name}
-                    >
-                      <img 
-                        src={method.logo} 
-                        alt={method.name} 
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Espace pour le sticky mobile */}
-      <div className="lg:hidden h-32"></div>
+      {/* Version mobile sticky bottom - Bouton d'achat fixe */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg z-50">
+        <div className="container mx-auto px-4 py-3">
+          {/* Prix et bouton principal */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
+                {originalPrice && (
+                  <span className="text-lg text-muted-foreground line-through decoration-2 decoration-destructive">
+                    {formatPrice(originalPrice)}
+                  </span>
+                )}
+              </div>
+              {hasPromo && (
+                <div className="text-xs text-green-600 font-medium">Économisez {formatPrice(originalPrice! - displayPrice!)}</div>
+              )}
+            </div>
+            <Button size="lg" className="flex-1 max-w-[180px] shadow-lg">
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              Acheter
+            </Button>
+          </div>
+          
+          {/* Logos moyens de paiement mobile */}
+          <div className="flex justify-center items-center gap-2">
+            <span className="text-xs text-muted-foreground mr-2">Paiement sécurisé:</span>
+            {paymentMethods.map((method, index) => (
+              <div 
+                key={index}
+                className="w-8 h-5 bg-white border border-gray-200 rounded flex items-center justify-center shadow-sm"
+                title={method.name}
+              >
+                <img 
+                  src={method.logo} 
+                  alt={method.name} 
+                  className="w-full h-full object-contain p-0.5"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Espace pour le sticky mobile - Augmenté pour plus d'espace */}
+      <div className="lg:hidden h-36"></div>
     </Layout>
   )
 }
