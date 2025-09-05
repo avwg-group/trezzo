@@ -25,24 +25,22 @@ import {
 import dayjs from "dayjs"
 import duration from "dayjs/plugin/duration"
 import "dayjs/locale/fr"
+import type { ProductDetailsResponse } from "~/services/types"
 
 // Configuration de dayjs
 dayjs.extend(duration)
 dayjs.locale('fr')
 
-// Données d'exemple du produit
-const productData = {
-  id: 1,
-  name: "Template E-commerce Premium",
-  price: "49€",
-  originalPrice: "79€",
-  promoEndDate: "2025-12-31T23:59:59",
-  image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=600&fit=crop",
-  category: "Templates",
-  shortDescription: "Un template e-commerce moderne et responsive, parfait pour lancer votre boutique en ligne rapidement.",
-  purchaseCount: 1247,
-  rating: 4.8,
-  reviewCount: 156
+// Interface pour les props
+interface ProductDetailPageProps {
+  loaderData: {
+    product: ProductDetailsResponse['product'];
+    customFields: ProductDetailsResponse['custom_fields'];
+    faqItems: ProductDetailsResponse['faq_items'];
+    reviews: ProductDetailsResponse['reviews'];
+    shop: ProductDetailsResponse['shop'];
+    error: string | null;
+  };
 }
 
 // Logos des moyens de paiement
@@ -52,31 +50,6 @@ const paymentMethods = [
   { name: "Orange Money", logo: "/images/orangemoney.svg" },
   { name: "Airtel", logo: "/images/airtel.png" },
   { name: "MTN MONEY", logo: "/images/mtnmoney.svg" }
-]
-
-// Avis clients
-const reviews = [
-  {
-    id: 1,
-    name: "Marie L.",
-    rating: 5,
-    comment: "Excellent template, très facile à personnaliser !",
-    date: "Il y a 2 jours"
-  },
-  {
-    id: 2,
-    name: "Thomas K.",
-    rating: 5,
-    comment: "Parfait pour mon e-commerce, je recommande vivement.",
-    date: "Il y a 1 semaine"
-  },
-  {
-    id: 3,
-    name: "Sophie M.",
-    rating: 4,
-    comment: "Très bon rapport qualité-prix, support réactif.",
-    date: "Il y a 2 semaines"
-  }
 ]
 
 // Fonction pour calculer le temps restant
@@ -134,12 +107,31 @@ function DigitalCountdown({ endDate }: { endDate: string }) {
   )
 }
 
-export function ProductDetailPage() {
-  const [selectedImage, setSelectedImage] = useState(productData.image)
-  const hasPromo = productData.originalPrice && productData.promoEndDate
+export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
+  const { product, customFields, faqItems, reviews, shop } = loaderData
+  const [selectedImage, setSelectedImage] = useState(product?.product_image || '')
+  
+  // Vérifier si le produit a une promotion
+  const hasPromo = product?.promo_price && product.promo_price < product.price
+  const displayPrice = hasPromo ? product.promo_price : product?.price
+  const originalPrice = hasPromo ? product.price : null
+
+  // Formatage des prix
+  const formatPrice = (price: number) => `${price.toFixed(0)}€`
+
+  if (!product) {
+    return (
+      <Layout shop_name={shop?.name} logo_url={shop?.logo_url}>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Produit introuvable</h1>
+          <p className="text-muted-foreground">Ce produit n'existe pas ou n'est plus disponible.</p>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
-    <Layout>
+    <Layout shop_name={shop?.name} logo_url={shop?.logo_url}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Section gauche - 2/3 de l'espace sur desktop */}
@@ -147,26 +139,26 @@ export function ProductDetailPage() {
             {/* Image du produit */}
             <div className="aspect-[4/3] overflow-hidden rounded-lg bg-muted">
               <img 
-                src={selectedImage} 
-                alt={productData.name}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-zoom-in"
+                src={selectedImage || product.product_image} 
+                alt={product.product_name}
+                className="w-full aspect-[1.91/1] sm:aspect-square max-w-[1200px] max-h-[1080px] object-cover hover:scale-105 transition-transform duration-300 cursor-zoom-in"
               />
             </div>
 
             {/* Titre et prix mobile */}
             <div className="lg:hidden">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary" className="text-xs">{productData.category}</Badge>
+                <Badge variant="secondary" className="text-xs">{product.category}</Badge>
                 {hasPromo && (
                   <Badge variant="destructive" className="text-xs animate-pulse">PROMO</Badge>
                 )}
               </div>
-              <h1 className="text-2xl font-bold mb-4">{productData.name}</h1>
+              <h1 className="text-2xl font-bold mb-4">{product.product_name}</h1>
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl font-bold text-primary">{productData.price}</span>
-                {productData.originalPrice && (
+                <span className="text-3xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
+                {originalPrice && (
                   <span className="text-xl text-muted-foreground line-through decoration-2 decoration-destructive">
-                    {productData.originalPrice}
+                    {formatPrice(originalPrice)}
                   </span>
                 )}
               </div>
@@ -175,18 +167,19 @@ export function ProductDetailPage() {
             {/* Titre et prix desktop */}
             <div className="hidden lg:block">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary" className="text-xs">{productData.category}</Badge>
+                <Badge variant="secondary" className="text-xs">{product.category}</Badge>
                 {hasPromo && (
                   <Badge variant="destructive" className="text-xs animate-pulse">PROMO</Badge>
                 )}
               </div>
-              <h1 className="text-3xl font-bold mb-4">{productData.name}</h1>
+              <h1 className="text-3xl font-bold mb-4">{product.product_name}</h1>
             </div>
 
-            {/* Description courte */}
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              {productData.shortDescription}
-            </p>
+            {/* Description */}
+            <div 
+              className="text-lg text-muted-foreground leading-relaxed prose prose-slate max-w-none"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
 
             {/* CTA mobile */}
             <div className="lg:hidden">
@@ -196,104 +189,40 @@ export function ProductDetailPage() {
               </Button>
             </div>
 
-            {/* Sections détaillées en accordéon */}
-            <Accordion type="single" collapsible className="w-full hidden">
-              <AccordionItem value="about">
-                <AccordionTrigger>À propos</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p>
-                      Ce template e-commerce premium a été conçu avec les dernières technologies web pour offrir 
-                      une expérience utilisateur exceptionnelle. Entièrement responsive et optimisé pour le SEO.
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Design moderne et professionnel
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Compatible tous navigateurs
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Optimisé pour mobile
-                      </li>
-                    </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="includes">
-                <AccordionTrigger>Ce que vous recevez</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-3 text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>15+ pages HTML complètes</span>
+            {/* FAQ Section */}
+            {faqItems.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-primary">Questions fréquentes</h3>
+                <Accordion type="single" collapsible className="w-full">
+                  {faqItems.map((faq) => (
+                    <AccordionItem key={faq.id} value={faq.id}>
+                      <AccordionTrigger>{faq.question}</AccordionTrigger>
+                      <AccordionContent>
+                        <div 
+                          className="text-muted-foreground"
+                          dangerouslySetInnerHTML={{ __html: faq.answer }}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            )}
+
+            {/* Champs personnalisés */}
+            {customFields.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-primary">Informations supplémentaires</h3>
+                <div className="space-y-3">
+                  {customFields.map((field) => (
+                    <div key={field.id} className="flex items-start gap-3">
+                      <span className="font-medium text-primary min-w-0 flex-shrink-0">{field.name}:</span>
+                      <span className="text-muted-foreground">{field.value}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Fichiers CSS et JavaScript optimisés</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Documentation complète</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Fichiers sources PSD/Figma</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Support technique 6 mois</span>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="usage">
-                <AccordionTrigger>Utilisation</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p>
-                      Installation simple en 3 étapes :
-                    </p>
-                    <ol className="space-y-2 list-decimal list-inside">
-                      <li>Téléchargez et décompressez l'archive</li>
-                      <li>Uploadez les fichiers sur votre serveur</li>
-                      <li>Personnalisez selon vos besoins</li>
-                    </ol>
-                    <p className="text-sm">
-                      Aucune connaissance technique avancée requise. Guide d'installation inclus.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="license">
-                <AccordionTrigger>Conditions/Licence</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-3 text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Licence commerciale incluse</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Utilisation sur projets illimités</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span>Revente autorisée après modification</span>
-                    </div>
-                    <p className="text-sm mt-4">
-                      Licence étendue permettant une utilisation commerciale complète.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Éléments de réassurance */}
             <Card className="hover:border-primary/20">
@@ -317,46 +246,50 @@ export function ProductDetailPage() {
             </Card>
 
             {/* Section Avis clients */}
-            <div>
-              <h3 className="text-xl font-semibold mb-4 text-primary">Avis clients</h3>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-5 w-5 ${
-                        i < Math.floor(productData.rating) 
-                          ? 'text-accent fill-current' 
-                          : 'text-secondary/30'
-                      }`} 
-                    />
+            {reviews && reviews.stats.total_reviews > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-primary">Avis clients</h3>
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        className={`h-5 w-5 ${
+                          i < Math.floor(reviews.stats.average_rating) 
+                            ? 'text-accent fill-current' 
+                            : 'text-secondary/30'
+                        }`} 
+                      />
+                    ))}
+                  </div>
+                  <span className="font-semibold text-primary">{reviews.stats.average_rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground">({reviews.stats.total_reviews} avis)</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {reviews.items.map((review) => (
+                    <Card key={review.id} className="border-primary/10 hover:border-primary/20 transition-colors">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-primary">{review.user_name}</span>
+                            <div className="flex items-center">
+                              {[...Array(review.rating)].map((_, i) => (
+                                <Star key={i} className="h-4 w-4 text-accent fill-current" />
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-sm text-secondary">
+                            {dayjs(review.created_at).fromNow()}
+                          </span>
+                        </div>
+                        <p className="text-secondary/80">{review.comment}</p>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
-                <span className="font-semibold text-primary">{productData.rating}</span>
-                <span className="text-muted-foreground">({productData.reviewCount} avis)</span>
               </div>
-              
-              <div className="space-y-4">
-                {reviews.map((review) => (
-                  <Card key={review.id} className="border-primary/10 hover:border-primary/20 transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-primary">{review.name}</span>
-                          <div className="flex items-center">
-                            {[...Array(review.rating)].map((_, i) => (
-                              <Star key={i} className="h-4 w-4 text-accent fill-current" />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-secondary">{review.date}</span>
-                      </div>
-                      <p className="text-secondary/80">{review.comment}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Section droite - 1/3 de l'espace sur desktop */}
@@ -369,17 +302,13 @@ export function ProductDetailPage() {
                     {/* Prix centré */}
                     <div className="text-center mb-6">
                       <div className="flex items-center justify-center gap-3 mb-4">
-                        <span className="text-4xl font-bold text-primary">{productData.price}</span>
-                        {productData.originalPrice && (
+                        <span className="text-4xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
+                        {originalPrice && (
                           <span className="text-2xl text-muted-foreground line-through decoration-2 decoration-destructive">
-                            {productData.originalPrice}
+                            {formatPrice(originalPrice)}
                           </span>
                         )}
                       </div>
-                      
-                      {hasPromo && productData.promoEndDate && (
-                        <DigitalCountdown endDate={productData.promoEndDate} />
-                      )}
                     </div>
                     
                     <Button size="lg" className="w-full mb-6">
@@ -412,19 +341,13 @@ export function ProductDetailPage() {
               
               {/* Version mobile sticky bottom */}
               <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-50">
-                {hasPromo && productData.promoEndDate && (
-                  <div className="mb-3">
-                    <DigitalCountdown endDate={productData.promoEndDate} />
-                  </div>
-                )}
-                
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-primary">{productData.price}</span>
-                      {productData.originalPrice && (
+                      <span className="text-2xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
+                      {originalPrice && (
                         <span className="text-lg text-muted-foreground line-through decoration-2 decoration-destructive">
-                          {productData.originalPrice}
+                          {formatPrice(originalPrice)}
                         </span>
                       )}
                     </div>
@@ -443,7 +366,11 @@ export function ProductDetailPage() {
                       className="w-8 h-5 bg-card border rounded flex items-center justify-center text-sm shadow-sm"
                       title={method.name}
                     >
-                      {method.logo}
+                      <img 
+                        src={method.logo} 
+                        alt={method.name} 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                   ))}
                 </div>

@@ -1,5 +1,5 @@
 import { apiClient, type ApiClientError } from '~/lib/apiClient';
-import type { Product, ProductsResponse, ProductFilters } from './types';
+import type { Product, ProductsResponse, ProductFilters, ProductDetailsResponse } from './types';
 
 export class ProductService {
   static async getProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
@@ -32,6 +32,29 @@ export class ProductService {
       return response;
     } catch (error) {
       console.error(`❌ Error fetching product ${id}:`, error);
+      throw error;
+    }
+  }
+
+  static async getProductDetails(
+    slug: string, 
+    reviewsPage: number = 1, 
+    reviewsLimit: number = 10
+  ): Promise<ProductDetailsResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (reviewsPage) params.append('reviews_page', reviewsPage.toString());
+      if (reviewsLimit) params.append('reviews_limit', reviewsLimit.toString());
+      
+      const queryString = params.toString();
+      const endpoint = `/shop/client/product/${slug}${queryString ? `?${queryString}` : ''}`;
+      console.log('🔍 Fetching product details from:', endpoint);
+      
+      const response = await apiClient.get<ProductDetailsResponse>(endpoint);
+      return response;
+    } catch (error) {
+      console.error(`❌ Error fetching product details for ${slug}:`, error);
       throw error;
     }
   }
