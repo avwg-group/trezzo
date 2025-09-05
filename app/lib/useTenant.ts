@@ -19,17 +19,14 @@ export function useTenant(): TenantInfo {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
       const parts = hostname.split('.');
+      console.log("parts",parts);
       
       let subdomain: string | null = null;
       let domain: string;
       let tenantId: string;
 
       // Gérer différents cas : localhost, sous-domaine.domain.com, domain.com
-      if (hostname === 'localhost' || hostname.startsWith('127.0.0.1') || hostname.startsWith('192.168')) {
-        // Environnement de développement
-        domain = hostname;
-        tenantId = 'default';
-      } else if (parts.length > 2) {
+      if (parts.length > 2) {
         // Cas avec sous-domaine : tenant.example.com
         subdomain = parts[0];
         domain = parts.slice(1).join('.');

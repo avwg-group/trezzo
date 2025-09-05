@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useNavigate, useSearchParams } from "react-router"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Layout } from "~/components/Layout"
@@ -18,24 +19,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover"
+import type { Product, Pagination } from "~/services/types"
+import { ErrorDisplay } from "~/components/ErrorDisplay";
+import { ErrorPageVariants } from './ErrorPage';
 
-// Données d'exemple pour tous les produits avec promotions
-const allProducts = Array.from({ length: 24 }, (_, i) => {
-  const hasPromo = i % 3 === 0 // Un produit sur trois en promo
-  const basePrice = 19 + (i % 5) * 10
-  
-  return {
-    id: i + 1,
-    name: `Produit Digital ${i + 1}`,
-    price: `${basePrice}€`,
-    originalPrice: hasPromo ? `${basePrice + 20}€` : undefined,
-    promoEndDate: hasPromo ? "2025-12-31T23:59:59" : undefined,
-    image: "/api/placeholder/300/200",
-    category: ["Templates", "Icônes", "Guides", "Presets"][i % 4]
-  }
-})
-
-const PRODUCTS_PER_PAGE = 8
+interface ProductsPageProps {
+  loaderData: {
+    products: Product[];
+    pagination: Pagination | null;
+    shop: any;
+    filters: {
+      page: number;
+      limit: number;
+      category: string;
+      search: string;
+      sortBy: string;
+      sortOrder: 'asc' | 'desc';
+    };
+    error?: string;
+  };
+}
 
 const categories = [
   { label: "Tous", value: "" },
@@ -45,32 +48,77 @@ const categories = [
   { label: "Presets", value: "Presets" },
 ]
 
-export function ProductsPage() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
+export function ProductsPage({ loaderData }: ProductsPageProps) {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [searchTerm, setSearchTerm] = useState(loaderData.filters.search)
+  const [selectedCategory, setSelectedCategory] = useState(loaderData.filters.category)
   const [open, setOpen] = useState(false)
 
-  // Filtrage des produits
-  const filteredProducts = allProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !selectedCategory || product.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  const { products, pagination, shop, filters, error } = loaderData
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE)
+  // Fonction pour mettre à jour les paramètres d'URL
+  const updateFilters = (newFilters: Partial<typeof filters>) => {
+    const params = new URLSearchParams(searchParams)
+    
+    Object.entries({ ...filters, ...newFilters }).forEach(([key, value]) => {
+      if (value && value !== '' && value !== 1) {
+        params.set(key, value.toString())
+      } else if (key !== 'page' && key !== 'limit') {
+        params.delete(key)
+      }
+    })
+    
+    navigate(`?${params.toString()}`, { replace: true })
+  }
+
+  // Gestion de la recherche avec debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== filters.search) {
+        updateFilters({ search: searchTerm, page: 1 })
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm])
+
+  // Gestion du changement de catégorie
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category)
+    updateFilters({ category, page: 1 })
+  }
+
+  // Gestion de la pagination
+  const handlePageChange = (page: number) => {
+    updateFilters({ page })
+  }
 
   const selectedCategoryLabel = categories.find(cat => cat.value === selectedCategory)?.label || "Tous"
+
+  // Dans le composant ProductsPage, remplacer la section d'erreur par :
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <ErrorDisplay 
+            error={error} 
+            onRetry={() => window.location.reload()}
+            className="max-w-md mx-auto"
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-4">Tous nos produits</h1>
+          <h1 className="text-3xl font-bold mb-4">
+            {shop?.name ? `Produits de ${shop.name}` : 'Tous nos produits'}
+          </h1>
           
           {/* Filtres et recherche */}
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -80,10 +128,7 @@ export function ProductsPage() {
                 placeholder="Rechercher un produit..." 
                 className="pl-10"
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value)
-                  setCurrentPage(1)
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
@@ -112,8 +157,7 @@ export function ProductsPage() {
                             key={category.value}
                             value={category.label}
                             onSelect={() => {
-                              setSelectedCategory(category.value)
-                              setCurrentPage(1)
+                              handleCategoryChange(category.value)
                               setOpen(false)
                             }}
                           >
@@ -136,32 +180,42 @@ export function ProductsPage() {
         </div>
 
         {/* Grille de produits ou message vide */}
-        {paginatedProducts.length > 0 ? (
+        {products.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {paginatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {products.map((product) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={{
+                    id: product.id,
+                    name: product.product_name,
+                    price: `${product.price}€`,
+                    originalPrice: product.promo_price ? `${product.promo_price}€` : undefined,
+                    image: product.product_image,
+                    category: product.category
+                  }} 
+                />
               ))}
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {pagination && pagination.total_pages > 1 && (
               <div className="flex justify-center items-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(pagination.current_page - 1)}
+                  disabled={!pagination.has_prev}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map(page => (
                   <Button 
                     key={page}
-                    variant={currentPage === page ? "default" : "outline"} 
+                    variant={pagination.current_page === page ? "default" : "outline"} 
                     size="sm"
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => handlePageChange(page)}
                   >
                     {page}
                   </Button>
@@ -170,8 +224,8 @@ export function ProductsPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(pagination.current_page + 1)}
+                  disabled={!pagination.has_next}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -179,9 +233,11 @@ export function ProductsPage() {
             )}
             
             {/* Résultats */}
-            <div className="text-center text-sm text-muted-foreground mt-4">
-              Affichage de {startIndex + 1} à {Math.min(startIndex + PRODUCTS_PER_PAGE, filteredProducts.length)} sur {filteredProducts.length} produits
-            </div>
+            {pagination && (
+              <div className="text-center text-sm text-muted-foreground mt-4">
+                Affichage de {((pagination.current_page - 1) * pagination.items_per_page) + 1} à {Math.min(pagination.current_page * pagination.items_per_page, pagination.total_items)} sur {pagination.total_items} produits
+              </div>
+            )}
           </>
         ) : (
           /* Message quand aucun produit n'est trouvé */
@@ -201,7 +257,7 @@ export function ProductsPage() {
                 onClick={() => {
                   setSearchTerm("")
                   setSelectedCategory("")
-                  setCurrentPage(1)
+                  updateFilters({ search: "", category: "", page: 1 })
                 }}
               >
                 Réinitialiser les filtres

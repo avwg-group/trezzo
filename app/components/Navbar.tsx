@@ -3,20 +3,51 @@ import { Link } from "react-router"
 import { Button } from "~/components/ui/button"
 import { Menu, X } from "lucide-react"
 
-export function Navbar() {
+interface NavbarProps {
+  shop_name?: string;
+  logo_url?: string;
+}
+
+export function Navbar({ shop_name, logo_url }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+
+  // Fonction pour rendre le logo/nom de manière intelligente
+  const renderBrand = () => {
+    // Logo prioritaire - si disponible, on affiche uniquement le logo
+    if (logo_url) {
+      return (
+        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+          <img 
+            src={logo_url} 
+            alt={shop_name || "Logo"} 
+            className="h-8 w-auto max-w-[200px] object-contain"
+            onError={(e) => {
+              // Si l'image échoue, on recharge la page avec le nom à la place
+              console.warn('Logo failed to load, falling back to shop name');
+              // Optionnel: vous pouvez forcer un re-render sans logo
+            }}
+          />
+        </Link>
+      );
+    }
+    
+    // Sinon, affichage du nom uniquement
+    return (
+      <Link to="/" className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
+        {shop_name || "ZestyLinks"}
+      </Link>
+    );
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+          {/* Logo/Brand - Intelligent */}
           <div className="flex-shrink-0">
-            <Link to="/" className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
-              Trezzo
-            </Link>
+            {renderBrand()}
           </div>
           
           {/* Navigation Links - Desktop */}
