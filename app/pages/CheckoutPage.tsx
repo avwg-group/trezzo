@@ -34,8 +34,8 @@ import { cn } from "~/lib/utils"
 const productData = {
   id: 1,
   name: "Template E-commerce Premium",
-  price: "49€",
-  originalPrice: "79€",
+  price: "49",
+  originalPrice: "79",
   image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=300&h=200&fit=crop",
   category: "Templates"
 }
@@ -291,7 +291,7 @@ export function CheckoutPage() {
                     {promoApplied && (
                       <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                         <span>Réduction</span>
-                        <span>-10€</span>
+                        <span>-10</span>
                       </div>
                     )}
                     
@@ -299,7 +299,7 @@ export function CheckoutPage() {
                       <span className="text-card-foreground">Total</span>
                       <div className="text-right">
                         <div className="text-brand-purple">
-                          {promoApplied ? "39€" : productData.price}
+                          {promoApplied ? "39" : productData.price}
                         </div>
                         {productData.originalPrice && (
                           <div className="text-sm text-muted-foreground line-through">

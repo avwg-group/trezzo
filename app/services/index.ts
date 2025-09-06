@@ -6,3 +6,5 @@ export type {
   ProductsResponse,
   ProductsQueryParams
 } from './types';
+export { default as LocationService } from './locationService';
+export type { LocationData } from './locationService';

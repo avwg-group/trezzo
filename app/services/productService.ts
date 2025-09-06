@@ -1,7 +1,19 @@
 import { apiClient, type ApiClientError } from '~/lib/apiClient';
 import type { Product, ProductsResponse, ProductFilters, ProductDetailsResponse } from './types';
+import LocationService from './locationService';
 
 export class ProductService {
+  // Méthode pour récupérer la devise depuis le cache
+  static async getUserCurrency(): Promise<string | null> {
+    try {
+      const locationData = await LocationService.getLocationData();
+      return locationData?.currency || null;
+    } catch (error) {
+      console.error('❌ Error getting user currency:', error);
+      return null;
+    }
+  }
+
   static async getProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
     try {
       const params = new URLSearchParams();
@@ -12,7 +24,13 @@ export class ProductService {
       if (filters.search) params.append('search', filters.search);
       if (filters.sortBy) params.append('sort_by', filters.sortBy);
       if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
-
+      
+      // Récupérer et ajouter la devise de l'utilisateur
+      const currency = await this.getUserCurrency();
+      if (currency) {
+        params.append('currency', currency);
+      }
+      
       const queryString = params.toString();
       const endpoint = `/shop/client/products${queryString ? `?${queryString}` : ''}`;
       
@@ -28,7 +46,18 @@ export class ProductService {
 
   static async getProduct(id: string): Promise<Product> {
     try {
-      const response = await apiClient.get<Product>(`/api/products/${id}`);
+      const params = new URLSearchParams();
+      
+      // Ajouter la devise de l'utilisateur
+      const currency = await this.getUserCurrency();
+      if (currency) {
+        params.append('currency', currency);
+      }
+      
+      const queryString = params.toString();
+      const endpoint = `/api/products/${id}${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await apiClient.get<Product>(endpoint);
       return response;
     } catch (error) {
       console.error(`❌ Error fetching product ${id}:`, error);
@@ -46,6 +75,12 @@ export class ProductService {
       
       if (reviewsPage) params.append('reviews_page', reviewsPage.toString());
       if (reviewsLimit) params.append('reviews_limit', reviewsLimit.toString());
+      
+      // Ajouter la devise de l'utilisateur
+      const currency = await this.getUserCurrency();
+      if (currency) {
+        params.append('currency', currency);
+      }
       
       const queryString = params.toString();
       const endpoint = `/shop/client/product/${slug}${queryString ? `?${queryString}` : ''}`;

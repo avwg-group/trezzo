@@ -388,9 +388,9 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                       product={{
                         id: product.id,
                         name: product.product_name,
-                        price: `${product.price}€`,
+                        price: `${product.price}`,
                         originalPrice: product.promo_price
-                          ? `${product.promo_price}€`
+                          ? `${product.promo_price}`
                           : undefined,
                         image: product.product_image,
                         category: product.category,

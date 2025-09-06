@@ -21,6 +21,7 @@ export interface Shop {
   logo_url: string;
   description: string;
   custom_domain: string | null;
+  currency: string;
 }
 
 export interface Pagination {

@@ -10,6 +10,7 @@ import {
   PaginationPrevious,
 } from "~/components/ui/pagination"
 import { ProductCard } from "./ProductCard"
+import { Link } from "react-router"
 
 interface Product {
   id: number
@@ -121,7 +122,7 @@ export function ProductGrid({ products, title, productsPerPage = 8 }: ProductGri
         {/* Bouton voir tous les produits */}
         <div className="text-center mt-8">
           <Button variant="outline" asChild>
-            <a href="/products">Voir tous les produits dans une page dédiée</a>
+            <Link to="/products">Voir tous les produits dans une page dédiée</Link>
           </Button>
         </div>
       </div>

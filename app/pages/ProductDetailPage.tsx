@@ -117,7 +117,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
   const originalPrice = hasPromo ? product.price : null
 
   // Formatage des prix
-  const formatPrice = (price: number) => `${price.toFixed(0)}€`
+  const formatPrice = (price: number) => `${price.toFixed(0)} ${shop.currency}`
 
   if (!product) {
     return (
@@ -155,7 +155,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
               </div>
               <h1 className="text-2xl font-bold mb-4">{product.product_name}</h1>
             </div>
-                
+
             {/* Titre et prix desktop */}
             <div className="hidden lg:block">
               <div className="flex items-center gap-2 mb-2">
