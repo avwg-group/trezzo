@@ -411,11 +411,11 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-brand-purple" />
-                    <span>📍 {locationData.city}, {selectedCountry.name}</span>
+                    <span>{locationData.city}, {selectedCountry.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-brand-gold" />
-                    <span>💰 {priceCalculations.currency}</span>
+                    <span> {priceCalculations.currency}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs bg-muted/50 px-2 py-1 rounded-full">
                     <span>✋ Sélection manuelle</span>
