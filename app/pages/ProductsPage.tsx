@@ -387,6 +387,7 @@ export function ProductsPage({ loaderData }: ProductsPageProps) {
                     <ProductCard
                       product={{
                         id: product.id,
+                        slug: product.slug,
                         name: product.product_name,
                         price: `${product.price}`,
                         originalPrice: product.promo_price

@@ -14,6 +14,7 @@ import { Link } from "react-router"
 
 interface Product {
   id: number
+  slug: string
   name: string
   price: string
   originalPrice?: string

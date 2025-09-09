@@ -26,6 +26,7 @@ import dayjs from "dayjs"
 import duration from "dayjs/plugin/duration"
 import "dayjs/locale/fr"
 import type { ProductDetailsResponse } from "~/services/types"
+import { Link } from "react-router"
 
 // Configuration de dayjs
 dayjs.extend(duration)
@@ -117,7 +118,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
   const originalPrice = hasPromo ? product.price : null
 
   // Formatage des prix
-  const formatPrice = (price: number) => `${price.toFixed(0)} ${shop.currency}`
+  const formatPrice = (price: number) => `${price}`
 
   if (!product) {
     return (
@@ -295,10 +296,12 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                       </div>
                     </div>
                     
-                    <Button size="lg" className="w-full mb-6">
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      Acheter maintenant
-                    </Button>
+                    <Link to={`/${product.slug}/checkout?productSlug=${product.slug}`} className="block">
+                      <Button size="lg" className="w-full mb-6">
+                        <ShoppingCart className="h-5 w-5 mr-2" />
+                        Acheter maintenant
+                      </Button>
+                    </Link>
                     
                     {/* Payment methods logos */}
                     <div className="border-t pt-4">

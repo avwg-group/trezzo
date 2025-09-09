@@ -124,3 +124,78 @@ export interface ReviewsStats {
     "5": number;
   };
 }
+
+
+export interface CreateTransactionRequest {
+  client_name: string;
+  email: string;
+  phone: string;
+  country: string;
+  city: string;
+  type: 'purchase';
+  currency: string;
+  amount: number; // Prix sans devise, juste le montant numérique
+  shop_id: string;
+  product_id: string;
+}
+
+export interface CreateTransactionResponse {
+  transaction_id: string;
+  payment_url: string;
+  status: string;
+  amount: number;
+  currency: string;
+  created_at: string;
+}
+
+// Interface pour les données client simplifiées
+export interface ClientData {
+  client_name: string;
+  email: string;
+  phone: string;
+}
+
+// Interface pour les données produit avec prix flexible
+export interface ProductTransactionData {
+  product_id: string;
+  shop_id: string;
+  amount: string | number; // Peut contenir une devise qui sera nettoyée
+}
+
+
+// Interface pour les statistiques d'utilisation des réductions
+export interface DiscountUsageStats {
+  total_uses: number;
+  total_discount_amount: string;
+  total_original_amount: string;
+  total_final_amount: string;
+  last_used_at: string | null;
+}
+
+// Interface pour les données de réduction
+export interface Discount {
+  id: string;
+  shop_id: string;
+  name: string;
+  description: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: string;
+  max_uses: number;
+  current_uses: number;
+  starts_at: string;
+  ends_at: string;
+  status: 'active' | 'inactive' | 'expired';
+  created_at: string;
+  updated_at: string;
+  usage_stats: DiscountUsageStats;
+  is_valid: boolean;
+}
+
+// Interface pour la réponse de l'API de réduction
+export interface DiscountResponse {
+  success: boolean;
+  message_key: string;
+  error_code: string | null;
+  data: Discount;
+}

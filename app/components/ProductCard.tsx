@@ -7,6 +7,7 @@ import dayjs from "dayjs"
 import duration from "dayjs/plugin/duration"
 import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/fr"
+import { Link } from "react-router"
 
 // Configuration de dayjs
 dayjs.extend(duration)
@@ -15,6 +16,7 @@ dayjs.locale('fr')
 
 interface Product {
   id: number
+  slug: string
   name: string
   price: string
   originalPrice?: string
@@ -147,10 +149,13 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         </div>
         
         {/* Bouton toujours aligné en bas */}
-        <Button size="sm" className="w-full mt-auto" variant="default">
+        <Link 
+          to={`/${product.slug}`}
+          className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-primary hover:bg-primary/90 active:scale-95 rounded-md"
+        >
           <ShoppingCart className="h-4 w-4 mr-2" />
           Acheter maintenant
-        </Button>
+        </Link>
       </CardContent>
     </Card>
   )

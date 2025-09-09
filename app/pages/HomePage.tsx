@@ -69,6 +69,7 @@ export function HomePage({ loaderData }: HomePageProps) {
         <ProductCarousel 
           products={featuredProducts.map(product => ({
             id: product.id,
+            slug: product.slug,
             name: product.product_name,
             price: `${product.price}`,
             originalPrice: product.promo_price ? `${product.promo_price}` : undefined,
@@ -83,6 +84,7 @@ export function HomePage({ loaderData }: HomePageProps) {
       <ProductGrid 
         products={filteredProducts.map(product => ({
           id: product.id,
+          slug: product.slug,
           name: product.product_name,
           price: `${product.price}`,
           originalPrice: product.promo_price ? `${product.promo_price}` : undefined,

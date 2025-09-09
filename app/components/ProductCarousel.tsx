@@ -9,6 +9,7 @@ import { ProductCard } from "./ProductCard"
 
 interface Product {
   id: number
+  slug: string
   name: string
   price: string
   originalPrice?: string
