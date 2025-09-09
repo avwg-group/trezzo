@@ -193,7 +193,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
         const countriesData = await fetchCountryData();
         setCountries(countriesData);
         
-        const detectedCountry = await detectUserCountry(locationData, shop?.currency);
+        const detectedCountry = await selectUserCountry(locationData, shop?.currency);
         setSelectedCountry(detectedCountry);
       } catch (error) {
         console.error('Erreur lors du chargement des pays:', error);
