@@ -134,7 +134,7 @@ export interface CreateTransactionRequest {
   city: string;
   type: 'purchase';
   currency: string;
-  amount: number; // Prix sans devise, juste le montant numérique
+  amount: string; // Prix sans devise, juste le montant numérique
   shop_id: string;
   product_id: string;
 }

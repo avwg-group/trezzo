@@ -130,9 +130,9 @@ export async function clientAction({
         };
         
         const productData = {
-          product_id: formData.get('productSlug') as string,
+          product_id: formData.get('productId') as string,
           shop_id: formData.get('shopId') as string,
-          amount: parseFloat(formData.get('amount') as string)
+          amount: formData.get('amount') as string
         };
         
         console.log('💳 Creating transaction:', { clientData, productData });

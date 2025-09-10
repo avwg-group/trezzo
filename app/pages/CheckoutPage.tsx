@@ -165,6 +165,8 @@ interface CheckoutPageProps {
 
 export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   const { product, shop, locationData, error } = loaderData;
+  console.log("product",product.product.id);
+  
   const submit = useSubmit();
   const navigation = useNavigation();
   
@@ -346,7 +348,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     submitFormData.append('email', formData.email.trim().toLowerCase());
     submitFormData.append('phone', `${selectedCountry.dialCode}${formData.phone.trim()}`);
     submitFormData.append('productId', product.product.id);
-    submitFormData.append('shopId', shop?.id || 'default-shop');
+    submitFormData.append('shopId', shop?.id);
     submitFormData.append('amount', priceCalculations.finalPrice.toString());
     
     console.log('💳 Création de la transaction:', {

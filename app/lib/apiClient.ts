@@ -27,7 +27,7 @@ export interface ApiClientOptions {
   defaultHeaders?: Record<string, string>;
   timeout?: number;
 }
- const baseUrl = "http://127.0.0.1:8380/api/v1/products";
+ const baseUrl = "http://127.0.0.1:8380/api/v1";
 
 export class ApiClient {
   private axiosInstance: AxiosInstance;

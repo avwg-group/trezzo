@@ -32,7 +32,7 @@ export class ProductService {
       }
       
       const queryString = params.toString();
-      const endpoint = `/shop/client/products${queryString ? `?${queryString}` : ''}`;
+      const endpoint = `/products/shop/client/products${queryString ? `?${queryString}` : ''}`;
       
       console.log('🔍 Fetching products from: getProducts', endpoint);
       
@@ -63,7 +63,7 @@ export class ProductService {
       }
       
       const queryString = params.toString();
-      const endpoint = `/shop/client/product/${slug}${queryString ? `?${queryString}` : ''}`;
+      const endpoint = `/products/shop/client/product/${slug}${queryString ? `?${queryString}` : ''}`;
       console.log('🔍 Fetching product details from:', endpoint);
       
       const response = await apiClient.get<ProductDetailsResponse>(endpoint);
@@ -164,7 +164,7 @@ export class ProductService {
       });
       
       const response = await apiClient.post<CreateTransactionResponse>(
-        '/api/v1/transactions/',
+        '/transactions/',
         transactionRequest
       );
       
@@ -207,7 +207,7 @@ export class ProductService {
       console.log('🔍 Creating manual transaction:', transactionData);
       
       const response = await apiClient.post<CreateTransactionResponse>(
-        '/api/v1/transactions/',
+        '/transactions/',
         transactionData
       );
       
