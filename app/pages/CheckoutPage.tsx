@@ -21,6 +21,7 @@ import {
   AlertCircle,
   TrendingUp,
   TrendingDown,
+    ExternalLink,
 } from "lucide-react";
 import {
   Command,
@@ -35,6 +36,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import type { ProductDetails, Discount } from "~/services/types";
@@ -258,6 +266,11 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   const [open, setOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<Discount | null>(null);
+  
+  // États pour le dialog de redirection
+  const [showRedirectDialog, setShowRedirectDialog] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
   // Chargement automatique des pays et détection
   useEffect(() => {
@@ -496,7 +509,47 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
         console.log("❌ Code promo invalide:", actionData.message);
       }
     }
+    
+    // Gestion de la redirection après création de transaction
+    if (actionData?.type === "transaction" && actionData.success && actionData.payment_url) {
+      setPaymentUrl(actionData.payment_url);
+      setShowRedirectDialog(true);
+      setRedirectCountdown(5);
+      
+      console.log("🔄 Redirection vers:", actionData.payment_url);
+    }
   }, [actionData]);
+
+  // Countdown pour la redirection automatique
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (showRedirectDialog && redirectCountdown > 0) {
+      interval = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            // Redirection automatique
+            if (paymentUrl) {
+              window.location.href = paymentUrl;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showRedirectDialog, redirectCountdown, paymentUrl]);
+
+  // Fonction pour redirection manuelle
+  const handleManualRedirect = () => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl;
+    }
+  };
 
   // Affichage d'erreur si pas de produit
   if (error || !product || !priceCalculations) {
@@ -521,6 +574,47 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   return (
     <Layout shop_name={shop?.name || "Boutique"} logo_url={shop?.logo_url}>
       <div className="min-h-screen bg-background">
+        {/* Dialog de redirection */}
+        <Dialog open={showRedirectDialog} onOpenChange={setShowRedirectDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Transaction créée avec succès !
+              </DialogTitle>
+              <DialogDescription>
+                Vous allez être redirigé vers la page de paiement dans quelques secondes.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="text-lg font-medium">
+                  Redirection dans {redirectCountdown}s...
+                </span>
+              </div>
+              
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Préparation de votre session de paiement sécurisé</p>
+                <p className="flex items-center justify-center gap-1 mt-1">
+                  <Shield className="h-3 w-3" />
+                  Connexion SSL chiffrée
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleManualRedirect}
+                className="w-full"
+                size="lg"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Continuer maintenant
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             {/* Header simplifié */}

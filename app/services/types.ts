@@ -143,12 +143,16 @@ export interface CreateTransactionRequest {
 }
 
 export interface CreateTransactionResponse {
-  transaction_id: string;
-  payment_url: string;
-  status: string;
-  amount: number;
-  currency: string;
-  created_at: string;
+  success: boolean;
+  message_key: string;
+  error_code: string | null;
+  data: {
+    transaction_id: string;
+    payment_url: string;
+    status: string;
+    currency: string;
+    created_at: string;
+  };
 }
 
 // Interface pour les données client simplifiées

@@ -150,17 +150,24 @@ export async function clientAction({
           discountId
         );
         
-        // Rediriger vers l'URL de paiement
-        if (transactionResponse.payment_url) {
-          return redirect(transactionResponse.payment_url);
+        // Vérifier le succès et retourner les données de transaction
+        if (transactionResponse.success && transactionResponse.data.payment_url) {
+          return {
+            type: 'transaction',
+            success: true,
+            transaction: transactionResponse.data,
+            payment_url: transactionResponse.data.payment_url,
+            message: 'Transaction créée avec succès!'
+          };
+        } else {
+          return {
+            type: 'transaction',
+            success: false,
+            transaction: null,
+            payment_url: null,
+            message: transactionResponse.error_code || 'Erreur lors de la création de la transaction'
+          };
         }
-        
-        return {
-          type: 'transaction',
-          success: true,
-          transaction: transactionResponse,
-          message: 'Transaction créée avec succès!'
-        };
       }
       
       default:

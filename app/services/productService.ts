@@ -174,11 +174,16 @@ export class ProductService {
         transactionRequest
       );
       
+      // Vérifier le succès de la réponse
+      if (!response.success) {
+        throw new Error(response.error_code || 'Erreur lors de la création de la transaction');
+      }
+      
       console.log('✅ Transaction created successfully:', {
-        transaction_id: response.transaction_id,
-        payment_url: response.payment_url,
-        amount: response.amount,
-        currency: response.currency
+        transaction_id: response.data.transaction_id,
+        payment_url: response.data.payment_url,
+        status: response.data.status,
+        currency: response.data.currency
       });
       
       return response;
@@ -217,7 +222,12 @@ export class ProductService {
         transactionData
       );
       
-      console.log('✅ Manual transaction created successfully:', response.transaction_id);
+      // Vérifier le succès de la réponse
+      if (!response.success) {
+        throw new Error(response.error_code || 'Erreur lors de la création de la transaction');
+      }
+      
+      console.log('✅ Manual transaction created successfully:', response.data.transaction_id);
       
       return response;
     } catch (error) {
