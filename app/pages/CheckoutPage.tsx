@@ -314,7 +314,9 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
 
     // Gestion des différents types de prix
     if (product.product.pricing_type === "fixed") {
-      basePrice = product.product.promo_price || product.product.price
+      basePrice = extractNumericPrice(
+        product.product.promo_price || product.product.price
+      );
     } else if (product.product.pricing_type === "flexible") {
       isFlexiblePrice = true;
       const minPrice = product.product.min_price;
