@@ -279,29 +279,18 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     loadCountriesAndDetect();
   }, [locationData]);
 
-  // Utility function to extract numeric price from formatted string and handle edge cases
+  // Utility function to extract numeric price from formatted string
   const extractNumericPrice = (priceString: string | number): number => {
     if (typeof priceString === "number") return priceString;
     if (!priceString) return 0;
 
-    // Extract number from string (e.g. "100 XAF" -> 100)
-    const match = priceString.toString().match(/([0-9]+(?:\.[0-9]+)?)/);
-    const price = match ? parseFloat(match[1]) : 0;
+    // Supprimer les espaces, virgules, séparateurs invisibles
+    const cleanString = priceString.replace(/[^0-9.,]/g, "").replace(/,/g, "");
 
-    // Handle very large or small amounts
-    if (price > 999999999) {
-      console.warn(
-        "Price exceeds maximum allowed value, capping at 999,999,999"
-      );
-      return 999999999;
-    }
+    // Si la chaîne est vide après nettoyage
+    if (!cleanString) return 0;
 
-    if (price < 0.01 && price !== 0) {
-      console.warn("Price below minimum allowed value, setting to 0.01");
-      return 0.01;
-    }
-
-    return price;
+    return parseFloat(cleanString);
   };
 
   // Calculs de prix simplifiés et corrigés
@@ -309,22 +298,34 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     if (!product) return null;
 
     let basePrice: number;
+    let originalPrice: number;
     let isFlexiblePrice = false;
     let priceRange: { min: string; max: string } | null = null;
+    let hasPromoPrice = false;
 
     // Gestion des différents types de prix
     if (product.product.pricing_type === "fixed") {
-      basePrice = extractNumericPrice(
-        product.product.promo_price || product.product.price
-      );
+      originalPrice = extractNumericPrice(product.product.price);
+      
+      // Vérifier s'il y a un prix promo valide et différent
+      if (product.product.promo_price && 
+          product.product.promo_price !== product.product.price &&
+          extractNumericPrice(product.product.promo_price) < originalPrice) {
+        basePrice = extractNumericPrice(product.product.promo_price);
+        hasPromoPrice = true;
+      } else {
+        basePrice = originalPrice;
+      }
     } else if (product.product.pricing_type === "flexible") {
       isFlexiblePrice = true;
       const minPrice = product.product.min_price;
       const maxPrice = product.product.max_price;
       priceRange = { min: minPrice.toString(), max: maxPrice.toString() };
       basePrice = extractNumericPrice(minPrice);
+      originalPrice = basePrice;
     } else {
-      basePrice = extractNumericPrice(product.product.price);
+      originalPrice = extractNumericPrice(product.product.price);
+      basePrice = originalPrice;
     }
 
     // Calcul de la réduction si applicable
@@ -340,20 +341,23 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const finalPrice = Math.max(0, basePrice - discountAmount);
     const currency = selectedCountry?.currency || "USD";
 
+    // Calcul des économies totales (promo + réduction)
+    const totalSavings = (originalPrice - finalPrice);
+    const savingsPercentage = totalSavings > 0 ? Math.round((totalSavings / originalPrice) * 100) : 0;
+
     return {
       basePrice,
+      originalPrice,
       isFlexiblePrice,
       priceRange,
-      hasPromoPrice:
-        product.product.promo_price &&
-        product.product.promo_price !== product.product.price,
-      originalPrice: product.product.price,
+      hasPromoPrice,
       discountAmount,
       finalPrice,
       currency,
       displayPrice: `${basePrice} ${currency}`,
-      savingsPercentage:
-        discountAmount > 0 ? Math.round((discountAmount / basePrice) * 100) : 0,
+      originalDisplayPrice: `${originalPrice} ${currency}`,
+      totalSavings,
+      savingsPercentage,
     };
   }, [product, appliedDiscount, selectedCountry?.currency]);
 
@@ -838,12 +842,18 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                           Prix de base
                         </span>
                         <div className="text-right">
-                          <div className="font-medium">
-                            {priceCalculations.displayPrice}
-                          </div>
-                          {priceCalculations.hasPromoPrice && (
-                            <div className="text-xs text-muted-foreground line-through">
-                              {priceCalculations.originalPrice}
+                          {priceCalculations.hasPromoPrice ? (
+                            <>
+                              <div className="font-medium text-green-600">
+                                {priceCalculations.displayPrice}
+                              </div>
+                              <div className="text-xs text-muted-foreground line-through">
+                                {priceCalculations.originalDisplayPrice}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="font-medium">
+                              {priceCalculations.displayPrice}
                             </div>
                           )}
                         </div>
@@ -853,9 +863,12 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                       {appliedDiscount &&
                         priceCalculations.discountAmount > 0 && (
                           <div className="flex items-center justify-between text-sm text-green-600">
-                            <span>Réduction</span>
+                            <span className="flex items-center gap-1">
+                              <Tag className="h-3 w-3" />
+                              Réduction ({appliedDiscount.name})
+                            </span>
                             <span className="font-medium">
-                              -{priceCalculations.discountAmount}{" "}
+                              -{priceCalculations.discountAmount.toFixed(0)}{" "}
                               {priceCalculations.currency}
                             </span>
                           </div>
@@ -868,13 +881,14 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                         <span className="font-semibold">Total</span>
                         <div className="text-right">
                           <div className="text-lg font-bold">
-                            {priceCalculations.finalPrice}{" "}
+                            {priceCalculations.finalPrice.toFixed(0)}{" "}
                             {priceCalculations.currency}
                           </div>
                           {priceCalculations.savingsPercentage > 0 && (
                             <div className="text-xs text-green-600 flex items-center gap-1">
                               <TrendingDown className="h-3 w-3" />
-                              Économie de {priceCalculations.savingsPercentage}%
+                              Économie de {priceCalculations.savingsPercentage}% 
+                              ({priceCalculations.totalSavings.toFixed(0)} {priceCalculations.currency})
                             </div>
                           )}
                         </div>
