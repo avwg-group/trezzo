@@ -132,12 +132,23 @@ export async function clientAction({
         const productData = {
           product_id: formData.get('productId') as string,
           shop_id: formData.get('shopId') as string,
-          amount: formData.get('amount') as string
+          amount: formData.get('amount') as string // Garder en string
         };
         
-        console.log('💳 Creating transaction:', { clientData, productData });
+        // Récupérer l'ID de la réduction si appliquée
+        const discountId = formData.get('discountId') as string || undefined;
         
-        const transactionResponse = await ProductService.createTransaction(clientData, productData);
+        console.log('💳 Creating transaction:', { 
+          clientData, 
+          productData, 
+          discountId: discountId || 'none' 
+        });
+        
+        const transactionResponse = await ProductService.createTransaction(
+          clientData, 
+          productData, 
+          discountId
+        );
         
         // Rediriger vers l'URL de paiement
         if (transactionResponse.payment_url) {

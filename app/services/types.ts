@@ -131,12 +131,15 @@ export interface CreateTransactionRequest {
   email: string;
   phone: string;
   country: string;
-  city: string;
+  city?: string;
+  operator?: string;
   type: 'purchase';
+  payment_method?: string;
   currency: string;
-  amount: string; // Prix sans devise, juste le montant numérique
-  shop_id: string;
-  product_id: string;
+  amount: string; // Backend attend une string
+  shop_id: string; // UUID4 en string
+  product_id: string; // UUID4 en string
+  discount_id?: string; // UUID4 optionnel en string
 }
 
 export interface CreateTransactionResponse {

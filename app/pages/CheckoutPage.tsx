@@ -38,6 +38,7 @@ import {
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import type { ProductDetails, Discount } from "~/services/types";
+import { Separator } from "~/components/ui/separator";
 
 // Moyens de paiement avec support étendu
 const paymentMethods = [
@@ -351,12 +352,18 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     submitFormData.append('shopId', shop?.id);
     submitFormData.append('amount', priceCalculations.finalPrice.toString());
     
+    // Ajouter l'ID de la réduction si appliquée
+    if (appliedDiscount?.id) {
+      submitFormData.append('discountId', appliedDiscount.id);
+    }
+    
     console.log('💳 Création de la transaction:', {
       product: product.product.product_name,
       amount: priceCalculations.finalPrice,
       customer: formData.fullName,
       phone: `${selectedCountry.dialCode}${formData.phone}`,
-      country: selectedCountry.name
+      country: selectedCountry.name,
+      discount: appliedDiscount ? `${appliedDiscount.name} (${appliedDiscount.id})` : 'none'
     });
     
     submit(submitFormData, { method: 'post' });
@@ -405,48 +412,44 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   
   return (
     <Layout shop_name={shop?.name || 'Boutique'} logo_url={shop?.logo_url}>
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-6xl mx-auto">
-            {/* Header avec sélection manuelle */}
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-light text-foreground mb-4">
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            {/* Header simplifié */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-semibold text-foreground mb-2">
                 Finaliser la commande
               </h1>
               {locationData && selectedCountry && (
-                <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-4">
+                <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-brand-purple" />
+                    <MapPin className="h-4 w-4" />
                     <span>{locationData.city}, {selectedCountry.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-brand-gold" />
-                    <span> {priceCalculations.currency}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs bg-muted/50 px-2 py-1 rounded-full">
-                    <span>✋ Sélection manuelle</span>
+                    <Globe className="h-4 w-4" />
+                    <span>{priceCalculations.currency}</span>
                   </div>
                 </div>
               )}
-              <div className="w-20 h-1 bg-gradient-to-r from-brand-purple to-brand-gold mx-auto rounded-full"></div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-              {/* Section gauche - Formulaire (3/5) */}
-              <div className="lg:col-span-3 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Section gauche - Formulaire (2/3) */}
+              <div className="lg:col-span-2 space-y-6">
                 {/* Informations personnelles */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="pb-6">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Shield className="h-5 w-5 text-brand-purple" />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
                       Informations personnelles
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Form onSubmit={handleSubmit} className="space-y-6">
+                    <Form onSubmit={handleSubmit} className="space-y-4">
                       {/* Nom complet */}
                       <div className="space-y-2">
-                        <Label htmlFor="fullName" className="text-sm font-medium">
+                        <Label htmlFor="fullName">
                           Nom complet *
                         </Label>
                         <Input
@@ -456,14 +459,13 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                           value={formData.fullName}
                           onChange={(e) => handleInputChange('fullName', e.target.value)}
                           className={cn(
-                            "h-12 rounded-xl transition-all",
-                            formErrors.fullName ? "border-destructive focus:border-destructive" : ""
+                            formErrors.fullName ? "border-destructive" : ""
                           )}
                           required
                         />
                         {formErrors.fullName && (
                           <p className="text-sm text-destructive flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
+                            <AlertCircle className="h-4 w-4" />
                             {formErrors.fullName}
                           </p>
                         )}
@@ -471,7 +473,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
 
                       {/* Email */}
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium">
+                        <Label htmlFor="email">
                           Adresse email *
                         </Label>
                         <Input
@@ -481,57 +483,56 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                           value={formData.email}
                           onChange={(e) => handleInputChange('email', e.target.value)}
                           className={cn(
-                            "h-12 rounded-xl transition-all",
-                            formErrors.email ? "border-destructive focus:border-destructive" : ""
+                            formErrors.email ? "border-destructive" : ""
                           )}
                           required
                         />
                         {formErrors.email ? (
                           <p className="text-sm text-destructive flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
+                            <AlertCircle className="h-4 w-4" />
                             {formErrors.email}
                           </p>
                         ) : (
-                          <p className="text-xs text-brand-gold flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <Zap className="h-3 w-3" /> 
                             Livraison instantanée par email
                           </p>
                         )}
                       </div>
 
-                      {/* Téléphone avec détection automatique universelle */}
+                      {/* Téléphone */}
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-sm font-medium">
+                        <Label htmlFor="phone">
                           Téléphone *
                         </Label>
                         <div className={cn(
-                          "flex rounded-xl border transition-all overflow-hidden",
-                          formErrors.phone ? "border-destructive" : "border-border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/20"
+                          "flex border rounded-md overflow-hidden",
+                          formErrors.phone ? "border-destructive" : "border-input"
                         )}>
-                          {/* Combobox pour tous les pays du monde */}
+                          {/* Combobox pays */}
                           <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={open}
-                                className="w-auto min-w-[140px] h-12 rounded-none flex items-center justify-center shadow-none border-none bg-muted/50"
+                                className="w-auto min-w-[120px] rounded-none border-0 border-r"
                                 disabled={isLoadingCountries}
                               >
                                 {isLoadingCountries ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : selectedCountry ? (
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg">{selectedCountry.flag}</span>
-                                    <span className="text-sm font-medium">{selectedCountry.dialCode}</span>
+                                    <span>{selectedCountry.flag}</span>
+                                    <span className="text-sm">{selectedCountry.dialCode}</span>
                                   </div>
                                 ) : (
-                                  <span className="text-sm">Choisir pays</span>
+                                  <span className="text-sm">Pays</span>
                                 )}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[350px] p-0">
+                            <PopoverContent className="w-[300px] p-0">
                               <Command>
                                 <CommandInput placeholder="Rechercher un pays..." />
                                 <CommandList>
@@ -542,17 +543,14 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                                         key={country.code}
                                         value={`${country.name} ${country.dialCode}`}
                                         onSelect={() => handleCountryChange(country.code)}
-                                        className="flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer"
+                                        className="flex items-center justify-between"
                                       >
-                                        <div className="flex items-center gap-3">
-                                          <span className="text-lg">{country.flag}</span>
-                                          <div className="flex flex-col">
-                                            <span className="font-medium text-sm">{country.name}</span>
-                                            <span className="text-xs text-muted-foreground">{country.currency}</span>
-                                          </div>
+                                        <div className="flex items-center gap-2">
+                                          <span>{country.flag}</span>
+                                          <span className="text-sm">{country.name}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                                          <span className="text-sm text-muted-foreground">
                                             {country.dialCode}
                                           </span>
                                           <Check
@@ -570,20 +568,19 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                             </PopoverContent>
                           </Popover>
                           
-                          {/* Champ de saisie du numéro */}
                           <Input
                             id="phone"
                             type="tel"
                             placeholder="Votre numéro de téléphone"
                             value={formData.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="border-0 rounded-none flex-1 focus-visible:ring-0 h-12"
+                            className="border-0 rounded-none flex-1 focus-visible:ring-0"
                             required
                           />
                         </div>
                         {formErrors.phone && (
                           <p className="text-sm text-destructive flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
+                            <AlertCircle className="h-4 w-4" />
                             {formErrors.phone}
                           </p>
                         )}
@@ -593,27 +590,26 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 </Card>
 
                 {/* Code promo */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Tag className="h-5 w-5 text-brand-gold" />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Tag className="h-5 w-5" />
                       Code promo (optionnel)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <Input
                         placeholder="Entrez votre code promo"
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                        className="h-12 rounded-xl flex-1"
+                        className="flex-1"
                       />
                       <Button
                         type="button"
                         onClick={handleApplyDiscount}
                         disabled={!promoCode.trim() || isApplyingDiscount}
                         variant="outline"
-                        className="h-12 px-6 rounded-xl"
                       >
                         {isApplyingDiscount ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -624,12 +620,12 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                     </div>
                     
                     {appliedDiscount && (
-                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-green-800">
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md dark:bg-green-950 dark:border-green-800">
+                        <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
                           <CheckCircle className="h-4 w-4" />
-                          <span className="font-medium">Code promo appliqué !</span>
+                          <span className="font-medium">Code promo appliqué</span>
                         </div>
-                        <p className="text-sm text-green-600 mt-1">
+                        <p className="text-sm text-green-600 dark:text-green-300 mt-1">
                           {appliedDiscount.name} - Réduction de {appliedDiscount.discount_value}
                           {appliedDiscount.discount_type === 'percentage' ? '%' : ` ${priceCalculations?.currency}`}
                         </p>
@@ -637,12 +633,10 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                     )}
                     
                     {actionData?.type === 'discount' && !actionData.success && (
-                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                          <p className="text-red-700 text-sm font-medium">
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-950 dark:border-red-800">
+                        <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+                          <AlertCircle className="h-4 w-4" />
+                          <p className="text-sm font-medium">
                             {actionData.message}
                           </p>
                         </div>
@@ -652,20 +646,20 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 </Card>
               </div>
 
-              {/* Section droite - Résumé (2/5) */}
-              <div className="lg:col-span-2 space-y-6">
+              {/* Section droite - Résumé (1/3) */}
+              <div className="space-y-6">
                 {/* Résumé de la commande */}
-                <Card className="border-0 shadow-lg sticky top-6">
-                  <CardHeader className="pb-6">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <ShoppingCart className="h-5 w-5 text-brand-purple" />
-                      Résumé de la commande
+                <Card className="sticky top-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5" />
+                      Résumé
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4">
                     {/* Produit */}
-                    <div className="flex gap-4">
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                    <div className="flex gap-3">
+                      <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center overflow-hidden">
                         {product.product.product_image ? (
                           <img 
                             src={product.product.product_image.trim()} 
@@ -678,29 +672,31 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                           />
                         ) : null}
                         <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground line-clamp-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm leading-tight">
                           {product.product.product_name}
                         </h3>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {product.product.category} • {product.product.product_type}
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {product.product.category}
                         </p>
                       </div>
                     </div>
 
-                    <div className="border-t pt-4 space-y-3">
+                    <Separator />
+
+                    <div className="space-y-2">
                       {/* Prix de base */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Prix de base:</span>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Prix de base</span>
                         <div className="text-right">
                           <div className="font-medium">
                             {priceCalculations.displayPrice}
                           </div>
                           {priceCalculations.hasPromoPrice && (
-                            <div className="text-sm text-muted-foreground line-through">
+                            <div className="text-xs text-muted-foreground line-through">
                               {priceCalculations.originalPrice}
                             </div>
                           )}
@@ -709,41 +705,29 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
 
                       {/* Réduction appliquée */}
                       {appliedDiscount && priceCalculations.discountAmount > 0 && (
-                        <div className="flex items-center justify-between text-green-600">
-                          <span className="text-sm">Réduction:</span>
+                        <div className="flex items-center justify-between text-sm text-green-600">
+                          <span>Réduction</span>
                           <span className="font-medium">
                             -{priceCalculations.discountAmount} {priceCalculations.currency}
                           </span>
                         </div>
                       )}
 
-                      {/* Prix flexible */}
-                      {priceCalculations.isFlexiblePrice && priceCalculations.priceRange && (
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="text-sm font-medium text-blue-800 mb-1">
-                            Prix flexible
-                          </div>
-                          <div className="text-sm text-blue-600">
-                            Fourchette: {priceCalculations.priceRange.min} - {priceCalculations.priceRange.max}
-                          </div>
-                        </div>
-                      )}
+                      <Separator />
 
                       {/* Total */}
-                      <div className="border-t pt-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-semibold">Total:</span>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-foreground">
-                              {priceCalculations.finalPrice} {priceCalculations.currency}
-                            </div>
-                            {priceCalculations.savingsPercentage > 0 && (
-                              <div className="text-sm text-green-600 flex items-center gap-1">
-                                <TrendingDown className="h-3 w-3" />
-                                Économie de {priceCalculations.savingsPercentage}%
-                              </div>
-                            )}
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Total</span>
+                        <div className="text-right">
+                          <div className="text-lg font-bold">
+                            {priceCalculations.finalPrice} {priceCalculations.currency}
                           </div>
+                          {priceCalculations.savingsPercentage > 0 && (
+                            <div className="text-xs text-green-600 flex items-center gap-1">
+                              <TrendingDown className="h-3 w-3" />
+                              Économie de {priceCalculations.savingsPercentage}%
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -753,21 +737,22 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                       type="submit"
                       onClick={handleSubmit}
                       disabled={!isFormValid || isCreatingTransaction || isLoadingCountries}
-                      className="w-full h-14 text-lg font-semibold rounded-xl bg-gradient-to-r from-brand-purple to-brand-gold hover:from-brand-purple/90 hover:to-brand-gold/90 transition-all duration-300"
+                      className="w-full"
+                      size="lg"
                     >
                       {isCreatingTransaction ? (
                         <div className="flex items-center gap-2">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          Traitement en cours...
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Traitement...
                         </div>
                       ) : isLoadingCountries ? (
                         <div className="flex items-center gap-2">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          Chargement des pays...
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Chargement...
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <Lock className="h-5 w-5" />
+                          <Lock className="h-4 w-4" />
                           Finaliser la commande
                         </div>
                       )}
@@ -776,53 +761,28 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 </Card>
 
                 {/* Moyens de paiement */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <CreditCard className="h-5 w-5 text-brand-gold" />
-                      Moyens de paiement acceptés
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <CreditCard className="h-4 w-4" />
+                      Paiement sécurisé
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 gap-3">
-                      {paymentMethods.map((method) => (
-                        <div
-                          key={method.name}
-                          className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30"
-                        >
-                          <img
-                            src={method.icon}
-                            alt={method.name}
-                            className="w-8 h-8 object-contain"
-                          />
-                          <div>
-                            <div className="text-sm font-medium">{method.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {method.description}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="aspect-[3/2] bg-muted rounded flex items-center justify-center">
+                        <img src="/images/visa.png" alt="Visa" className="h-4 object-contain" />
+                      </div>
+                      <div className="aspect-[3/2] bg-muted rounded flex items-center justify-center">
+                        <img src="/images/mastercard.svg" alt="Mastercard" className="h-4 object-contain" />
+                      </div>
+                      <div className="aspect-[3/2] bg-muted rounded flex items-center justify-center">
+                        <img src="/images/mtnmoney.svg" alt="MTN Money" className="h-4 object-contain" />
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Garanties */}
-                <Card className="border-0 shadow-lg">
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 text-sm">
-                        <Shield className="h-5 w-5 text-green-600" />
-                        <span>Paiement 100% sécurisé</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <Zap className="h-5 w-5 text-blue-600" />
-                        <span>Livraison instantanée</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <CheckCircle className="h-5 w-5 text-purple-600" />
-                        <span>Support client 24/7</span>
-                      </div>
+                    <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                      <Shield className="h-3 w-3" />
+                      <span>Paiement 100% sécurisé</span>
                     </div>
                   </CardContent>
                 </Card>

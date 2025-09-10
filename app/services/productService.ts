@@ -103,6 +103,7 @@ export class ProductService {
    * Crée une transaction de paiement avec les données de géolocalisation automatiques
    * @param clientData - Données du client
    * @param productData - Données du produit
+   * @param discountId - ID de la réduction appliquée (optionnel)
    * @returns Réponse de création de transaction avec URL de paiement
    */
   static async createTransaction(
@@ -115,7 +116,8 @@ export class ProductService {
       product_id: string;
       shop_id: string;
       amount: string | number; // Prix qui peut contenir une devise
-    }
+    },
+    discountId?: string
   ): Promise<CreateTransactionResponse> {
     try {
       // Validation des données client
@@ -149,18 +151,22 @@ export class ProductService {
         phone: clientData.phone,
         country: locationData.country_name,
         city: locationData.city,
+        operator: undefined, // À déterminer selon le pays/opérateur
         type: 'purchase',
+        payment_method: undefined, // À déterminer selon la région
         currency: locationData.currency,
-        amount: cleanAmount, // Montant nettoyé sans devise
+        amount: cleanAmount.toString(), // Convertir en string pour le backend
         shop_id: productData.shop_id,
-        product_id: productData.product_id
+        product_id: productData.product_id,
+        discount_id: discountId || undefined
       };
       
       console.log('🔍 Creating transaction with geolocation data:', {
         ...transactionRequest,
-        amount: `${transactionRequest.amount} (nettoyé)`,
+        amount: `${transactionRequest.amount}`,
         location: `${transactionRequest.city}, ${transactionRequest.country}`,
-        currency: transactionRequest.currency
+        currency: transactionRequest.currency,
+        discount_applied: !!discountId
       });
       
       const response = await apiClient.post<CreateTransactionResponse>(
