@@ -913,7 +913,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="aspect-[3/2] bg-muted rounded flex items-center justify-center">
                         <img
-                          src="/images/visa.png"
+                          src="/images/orangemoney.svg"
                           alt="Visa"
                           className="h-4 object-contain"
                         />
