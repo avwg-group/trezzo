@@ -67,15 +67,59 @@ export async function clientAction({
         
         console.log('🏷️ Applying discount:', { shopId, discountCode });
         
-        const productService = new ProductService();
-        const discountResponse = await productService.getDiscountByCode(shopId, discountCode);
+        if (!shopId || !discountCode) {
+          return {
+            type: 'discount',
+            success: false,
+            discount: null,
+            message: 'Données manquantes pour appliquer la réduction'
+          };
+        }
         
-        return {
-          type: 'discount',
-          success: discountResponse.success,
-          discount: discountResponse.data,
-          message: discountResponse.success ? 'Réduction appliquée avec succès!' : 'Code de réduction invalide'
-        };
+        try {
+          const discountResponse = await ProductService.getDiscountByCode(shopId, discountCode);
+          
+          // Vérifier si la réduction est valide
+          if (discountResponse.success && discountResponse.data) {
+            const isValid = ProductService.isDiscountValid(discountResponse.data);
+            
+            if (!isValid) {
+              return {
+                type: 'discount',
+                success: false,
+                discount: null,
+                message: 'Ce code de réduction n\'est plus valide ou a expiré'
+              };
+            }
+          }
+          
+          return {
+            type: 'discount',
+            success: discountResponse.success,
+            discount: discountResponse.data,
+            message: discountResponse.success ? 'Réduction appliquée avec succès!' : 'Code de réduction invalide'
+          };
+        } catch (error: any) {
+          console.error('❌ Error applying discount:', error);
+          
+          // Gestion des erreurs spécifiques
+          let errorMessage = 'Erreur lors de l\'application de la réduction';
+          
+          if (error.status === 404) {
+            errorMessage = 'Code de réduction introuvable';
+          } else if (error.status === 400) {
+            errorMessage = 'Code de réduction invalide';
+          } else if (error.status >= 500) {
+            errorMessage = 'Erreur serveur, veuillez réessayer';
+          }
+          
+          return {
+            type: 'discount',
+            success: false,
+            discount: null,
+            message: errorMessage
+          };
+        }
       }
       
       case 'createTransaction': {

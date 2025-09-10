@@ -226,7 +226,7 @@ export class ProductService {
    * @param discountCode - Le code de réduction
    * @returns Promise<DiscountResponse> - Les données de la réduction
    */
-  async getDiscountByCode(shopId: string, discountCode: string): Promise<DiscountResponse> {
+  static async getDiscountByCode(shopId: string, discountCode: string): Promise<DiscountResponse> {
     try {
       const response = await apiClient.get<DiscountResponse>(
         `/discounts/shop/${shopId}/code/${discountCode}`
@@ -243,7 +243,7 @@ export class ProductService {
    * @param discount - Les données de la réduction
    * @returns boolean - True si la réduction est valide
    */
-  isDiscountValid(discount: Discount): boolean {
+  static isDiscountValid(discount: Discount): boolean {
     const now = new Date();
     const startDate = new Date(discount.starts_at);
     const endDate = new Date(discount.ends_at);
@@ -263,7 +263,7 @@ export class ProductService {
    * @param originalAmount - Le montant original
    * @returns number - Le montant de la réduction
    */
-  calculateDiscountAmount(discount: Discount, originalAmount: number): number {
+  static calculateDiscountAmount(discount: Discount, originalAmount: number): number {
     if (!this.isDiscountValid(discount)) {
       return 0;
     }
@@ -285,7 +285,7 @@ export class ProductService {
    * @param originalAmount - Le montant original
    * @returns object - Contient le montant original, la réduction et le montant final
    */
-  applyDiscount(discount: Discount, originalAmount: number) {
+  static applyDiscount(discount: Discount, originalAmount: number) {
     const discountAmount = this.calculateDiscountAmount(discount, originalAmount);
     const finalAmount = originalAmount - discountAmount;
     

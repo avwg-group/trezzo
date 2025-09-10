@@ -312,20 +312,22 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   // Application du code promo avec validation
   const handleApplyDiscount = () => {
     if (!promoCode.trim()) {
+      console.warn('⚠️ Code promo vide');
       return;
     }
     
     if (!shop?.id) {
-      console.error('❌ Shop ID manquant pour appliquer la réduction');
+      console.error('❌ ID de boutique manquant');
       return;
     }
-    
+
     const formData = new FormData();
     formData.append('actionType', 'applyDiscount');
     formData.append('shopId', shop.id);
     formData.append('discountCode', promoCode.trim().toUpperCase());
-    
+
     console.log(`🏷️ Application du code promo: ${promoCode.trim().toUpperCase()}`);
+    
     submit(formData, { method: 'post' });
   };
   
@@ -370,8 +372,10 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     if (actionData?.type === 'discount') {
       if (actionData.success && actionData.discount) {
         setAppliedDiscount(actionData.discount);
+        setPromoCode(''); // Nettoyer le champ après succès
         console.log('✅ Code promo appliqué:', actionData.discount.name);
       } else {
+        setAppliedDiscount(null); // Réinitialiser en cas d'échec
         console.log('❌ Code promo invalide:', actionData.message);
       }
     }
@@ -631,14 +635,15 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                     )}
                     
                     {actionData?.type === 'discount' && !actionData.success && (
-                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-red-800">
-                          <AlertCircle className="h-4 w-4" />
-                          <span className="font-medium">Code promo invalide</span>
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          <p className="text-red-700 text-sm font-medium">
+                            {actionData.message}
+                          </p>
                         </div>
-                        <p className="text-sm text-red-600 mt-1">
-                          {actionData.message}
-                        </p>
                       </div>
                     )}
                   </CardContent>
