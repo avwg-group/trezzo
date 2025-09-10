@@ -39,6 +39,8 @@ import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import type { ProductDetails, Discount } from "~/services/types";
 import { Separator } from "~/components/ui/separator";
+// Ajout de l'import libphonenumber-js
+import { parsePhoneNumber, isValidPhoneNumber, getCountryCallingCode } from 'libphonenumber-js';
 
 // Moyens de paiement avec support étendu
 const paymentMethods = [
@@ -361,8 +363,31 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       errors.email = "Format d'email invalide";
     }
 
+    // Validation améliorée du téléphone avec libphonenumber-js
     if (!formData.phone.trim()) {
       errors.phone = "Le numéro de téléphone est requis";
+    } else if (selectedCountry) {
+      try {
+        // Construire le numéro complet avec l'indicatif du pays
+        const fullPhoneNumber = `${selectedCountry.dialCode}${formData.phone.trim()}`;
+        
+        // Vérifier si le numéro est valide pour le pays sélectionné
+        const isValid = isValidPhoneNumber(fullPhoneNumber, selectedCountry.code as any);
+        
+        if (!isValid) {
+          // Essayer de parser pour obtenir plus d'informations sur l'erreur
+          try {
+            const phoneNumber = parsePhoneNumber(fullPhoneNumber, selectedCountry.code as any);
+            if (!phoneNumber.isValid()) {
+              errors.phone = `Numéro invalide pour ${selectedCountry.name}`;
+            }
+          } catch (parseError) {
+            errors.phone = `Format de numéro invalide pour ${selectedCountry.name}`;
+          }
+        }
+      } catch (error) {
+        errors.phone = "Format de numéro invalide";
+      }
     } else if (formData.phone.trim().length < 8) {
       errors.phone = "Numéro de téléphone trop court";
     }
@@ -371,13 +396,46 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     return Object.keys(errors).length === 0;
   };
 
+  // Validation en temps réel du téléphone lors de la saisie
+  const validatePhoneRealTime = (phoneValue: string) => {
+    if (!phoneValue.trim() || !selectedCountry) {
+      return;
+    }
+  
+    try {
+      const fullPhoneNumber = `${selectedCountry.dialCode}${phoneValue.trim()}`;
+      const isValid = isValidPhoneNumber(fullPhoneNumber, selectedCountry.code as any);
+      
+      if (!isValid && phoneValue.trim().length >= 6) {
+        setFormErrors(prev => ({
+          ...prev,
+          phone: `Numéro invalide pour ${selectedCountry.name}`
+        }));
+      } else if (isValid) {
+        // Effacer l'erreur si le numéro devient valide
+        setFormErrors(prev => {
+          const { phone, ...rest } = prev;
+          return rest;
+        });
+      }
+    } catch (error) {
+      // Ne pas afficher d'erreur pendant la saisie pour les erreurs de parsing
+    }
+  };
+  
   // Gestion des changements de formulaire avec validation
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
+  
     // Effacer l'erreur du champ modifié
     if (formErrors[field]) {
       setFormErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  
+    // Validation en temps réel pour le téléphone
+    if (field === 'phone') {
+      // Débounce la validation pour éviter trop d'appels
+      setTimeout(() => validatePhoneRealTime(value), 300);
     }
   };
 
@@ -618,70 +676,54 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                                 {isLoadingCountries ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : selectedCountry ? (
-                                  <div className="flex items-center gap-1 md:gap-2">
-                                    <span className="text-base md:text-lg">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">
                                       {selectedCountry.flag}
                                     </span>
-                                    <span className="hidden md:inline text-sm">
+                                    <span className="text-sm font-mono hidden md:inline">
                                       {selectedCountry.dialCode}
-                                    </span>
-                                    <span className="md:hidden text-xs">
-                                      {selectedCountry.code}
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="text-xs md:text-sm">
+                                  <span className="text-sm text-muted-foreground">
                                     Pays
                                   </span>
                                 )}
-                                <ChevronsUpDown className="ml-1 md:ml-2 h-3 w-3 md:h-4 md:w-4 opacity-50" />
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent
-                              className="w-[250px] md:w-[300px] p-0"
-                              side="bottom"
-                              align="start"
-                            >
+                            <PopoverContent className="w-[300px] p-0">
                               <Command>
-                                <CommandInput
-                                  placeholder="Rechercher un pays..."
-                                  className="text-sm md:text-base"
-                                />
+                                <CommandInput placeholder="Rechercher un pays..." />
                                 <CommandList>
-                                  <CommandEmpty>
-                                    Aucun pays trouvé.
-                                  </CommandEmpty>
+                                  <CommandEmpty>Aucun pays trouvé.</CommandEmpty>
                                   <CommandGroup>
                                     {countries.map((country) => (
                                       <CommandItem
                                         key={country.code}
-                                        value={`${country.name} ${country.dialCode}`}
+                                        value={country.code}
                                         onSelect={() =>
                                           handleCountryChange(country.code)
                                         }
-                                        className="flex items-center justify-between py-2 md:py-3"
                                       >
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          <span className="text-base md:text-lg flex-shrink-0">
-                                            {country.flag}
-                                          </span>
-                                          <span className="text-xs md:text-sm truncate">
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selectedCountry?.code === country.code
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        <span className="mr-2 text-lg">
+                                          {country.flag}
+                                        </span>
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">
                                             {country.name}
                                           </span>
-                                        </div>
-                                        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-                                          <span className="text-xs md:text-sm text-muted-foreground">
+                                          <span className="text-sm text-muted-foreground font-mono">
                                             {country.dialCode}
                                           </span>
-                                          <Check
-                                            className={cn(
-                                              "h-3 w-3 md:h-4 md:w-4",
-                                              selectedCountry?.code ===
-                                                country.code
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                            )}
-                                          />
                                         </div>
                                       </CommandItem>
                                     ))}
@@ -690,22 +732,35 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                               </Command>
                             </PopoverContent>
                           </Popover>
+
+                          {/* Input téléphone */}
                           <Input
                             id="phone"
                             type="tel"
-                            placeholder="Numéro de téléphone"
+                            placeholder="123456789"
                             value={formData.phone}
-                            onChange={(e) =>
-                              handleInputChange("phone", e.target.value)
-                            }
-                            className="border-0 rounded-none flex-1 focus-visible:ring-0"
+                            onChange={(e) => {
+                              // Permettre seulement les chiffres, espaces, tirets et parenthèses
+                              const cleanValue = e.target.value.replace(/[^0-9\s\-\(\)]/g, '');
+                              handleInputChange("phone", cleanValue);
+                            }}
+                            className="rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             required
                           />
                         </div>
-                        {formErrors.phone && (
+                        {formErrors.phone ? (
                           <p className="text-sm text-destructive flex items-center gap-1">
                             <AlertCircle className="h-4 w-4" />
                             {formErrors.phone}
+                          </p>
+                        ) : selectedCountry && formData.phone.trim() ? (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Format: {selectedCountry.dialCode}{formData.phone.trim()}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Entrez votre numéro sans l'indicatif pays
                           </p>
                         )}
                       </div>
