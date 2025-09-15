@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import { TenantProvider } from "./lib/TenantContext";
 import "./app.css";
+import { TrackingMeta } from "./components/TrackingMeta";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -31,6 +32,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
+        <TrackingMeta />
         <Links />
       </head>
       <body>
