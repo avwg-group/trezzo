@@ -112,6 +112,60 @@ export function HydrateFallback() {
   );
 }
 
+
+export function meta({ data, location }: Route.MetaArgs) {
+  const { products, shop, categories, error } = data || {};
+  
+  if (error || !shop) {
+    return [
+      { title: "Catalog - Shop" },
+      { name: "description", content: "Discover our product catalog" },
+      { name: "robots", content: "index, follow" }
+    ];
+  }
+
+  const shopName = shop.name || "Shop";
+  const shopLogo = shop.logo_url || "default-logo.png";
+  
+  // Build canonical URL
+  const canonicalUrl = shop.custom_domain 
+    ? `https://${shop.custom_domain}${location.pathname}`
+    : `https://${shop.slug}.myzestylinks.com${location.pathname}`;
+
+  // Basic meta tags
+  return [
+    { title: `Catalogue - ${shopName}` },
+    { name: "description", content: `Parcourir le catalogue des produits de ${shopName}` },
+    { name: "robots", content: "index, follow" },
+    { name: "author", content: shopName },
+    { tagName: "link", rel: "canonical", href: canonicalUrl },
+    // Favicon
+    { tagName: "link", rel: "icon", type: "image/x-icon", href: shopLogo },
+    // Open Graph
+    { property: "og:title", content: `Catalogue - ${shopName}` },
+    { property: "og:description", content: `Parcourir le catalogue des produits de ${shopName}` },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: canonicalUrl },
+    { property: "og:image", content: shopLogo },
+    
+    // Schema.org minimal markup
+    {
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": `${shopName} Catalog`,
+        "description": `Browse ${shopName}'s product catalog`,
+        "url": canonicalUrl,
+        "provider": {
+          "@type": "Organization",
+          "name": shopName,
+          "logo": shopLogo
+        }
+      }
+    }
+  ];
+}
+
 export default function ProductsRoute({ loaderData }: Route.ComponentProps) {
   return <ProductsPage loaderData={loaderData} />;
 }
