@@ -36,7 +36,7 @@ export async function clientLoader({
 
     return {
       product: productResponse,
-      shop: productResponse?.shop || { name: 'Boutique', logo_url: null }, // Récupérer depuis le produit
+      shop: productResponse?.shop || { name: 'Boutique', logo_url: "default-logo.png" }, // Récupérer depuis le produit
       locationData,
       error: null
     };
@@ -198,6 +198,51 @@ export function HydrateFallback() {
     </div>
   );
 }
+
+// Fonction meta pour le SEO dynamique de la page checkout
+export function meta({ data }: Route.MetaArgs) {
+  const { product, shop, error } = data || {};
+  console.log("productproduct",product);
+  
+  if (error || !product || !shop) {
+    return [
+      { title: "Commande - Boutique" },
+      { name: "description", content: "Finalisez votre commande en toute sécurité" },
+      { name: "robots", content: "noindex, nofollow" }
+    ];
+  }
+
+  const productName = product.product.product_name || "Produit";
+  const shopName = shop.name || "Boutique";
+  const shopLogo = shop.logo_url || "default-logo.png";
+  const description = `Commandez ${productName} sur ${shopName}. Paiement sécurisé et livraison rapide.`;
+  
+  return [
+    { title: `Commande: ${productName} - ${shopName}` },
+    { name: "description", content: description },
+    { name: "robots", content: "noindex, nofollow" }, // Pas d'indexation pour les pages de commande
+    { tagName: "link", rel: "icon", type: "image/x-icon", href: shopLogo },
+    
+    // Open Graph
+    { property: "og:title", content: `Commande: ${productName}` },
+    { property: "og:description", content: description },
+    { property: "og:type", content: "website" },
+    { property: "og:site_name", content: shopName },
+    { property: "og:image", content: shopLogo },
+    ...(product.product.product_image ? [{ property: "og:image", content: product.product.product_image }] : []),
+    
+    // Twitter Cards
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: `Commande: ${productName}` },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: shopLogo },
+    ...(product.product.product_image ? [{ name: "twitter:image", content: product.product.product_image }] : []),
+    
+    // Sécurité et confidentialité
+    { name: "referrer", content: "strict-origin-when-cross-origin" },
+  ];
+}
+
 
 export default function Checkout({ loaderData, actionData }: Route.ComponentProps) {
   return <CheckoutPage loaderData={loaderData} actionData={actionData} />;
