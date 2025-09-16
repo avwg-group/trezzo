@@ -110,7 +110,8 @@ export function meta({ data, location }: Route.MetaArgs) {
     { title: `${productName} - ${shopName}` },
     { name: "description", content: description.substring(0, 160) },
     { name: "robots", content: "index, follow" },
-    
+       // Favicon
+    { tagName: "link", rel: "icon", type: "image/x-icon", href: productImage }, 
     // Open Graph basic tags
     { property: "og:title", content: `${productName} - ${shopName}` },
     { property: "og:description", content: description.substring(0, 160) },
