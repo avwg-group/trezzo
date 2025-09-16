@@ -83,6 +83,54 @@ export function HydrateFallback() {
   );
 }
 
+
+export function meta({ data, location }: Route.MetaArgs) {
+  const { product, shop, error } = data || {};
+  console.log("detailproduct",product);
+  
+  if (error || !product || !shop) {
+    return [
+      { title: "Produit non trouvé" },
+      { name: "description", content: "Le produit demandé n'a pas pu être trouvé" },
+      { name: "robots", content: "noindex, nofollow" }
+    ];
+  }
+
+  const productName = product.product_name || "Produit";
+  const shopName = shop.name || "Boutique";
+  const description = product.description || `Découvrez ${productName} sur ${shopName}`;
+  const productImage = product.product_image || shop.logo_url || "default-logo.png";
+
+  // Build canonical URL
+  const canonicalUrl = shop.custom_domain 
+    ? `https://${shop.custom_domain}${location.pathname}`
+    : `https://${shop.slug}.myzestylinks.com${location.pathname}`;
+
+  return [
+    { title: `${productName} - ${shopName}` },
+    { name: "description", content: description.substring(0, 160) },
+    { name: "robots", content: "index, follow" },
+    
+    // Open Graph basic tags
+    { property: "og:title", content: `${productName} - ${shopName}` },
+    { property: "og:description", content: description.substring(0, 160) },
+    { property: "og:type", content: "product" },
+    { property: "og:image", content: productImage },
+    { property: "og:url", content: canonicalUrl },
+    
+    // Basic Schema.org
+    {
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": productName,
+        "description": description,
+        "image": productImage,
+        "url": canonicalUrl
+      }
+    }
+  ];
+}
 export default function ProductDetailRoute({ loaderData }: Route.ComponentProps) {
   // Gestion des erreurs
   if (loaderData.error) {

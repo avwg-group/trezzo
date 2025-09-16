@@ -118,8 +118,8 @@ export function meta({ data, location }: Route.MetaArgs) {
   
   if (error || !shop) {
     return [
-      { title: "Catalog - Shop" },
-      { name: "description", content: "Discover our product catalog" },
+      { title: "Catalogue - Boutique" },
+      { name: "description", content: "Parcourez notre catalogue de produits" },
       { name: "robots", content: "index, follow" }
     ];
   }
