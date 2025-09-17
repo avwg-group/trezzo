@@ -345,7 +345,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                 )}
               </div>
               {hasPromo && (
-                <div className="text-xs text-green-600 font-medium">Économisez {formatPrice(originalPrice! - displayPrice!)}</div>
+                <div className="hidden text-xs text-green-600 font-medium">Économisez {formatPrice(originalPrice! - displayPrice!)}</div>
               )}
             </div>
             <Button size="lg" className="flex-1 max-w-[180px] shadow-lg">

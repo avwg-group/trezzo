@@ -15,7 +15,7 @@ dayjs.extend(relativeTime)
 dayjs.locale('fr')
 
 interface Product {
-  id: number
+  id: string
   slug: string
   name: string
   price: string
@@ -95,10 +95,10 @@ function ProductPrice({ price, originalPrice, promoEndDate }: {
       
       {/* Prix à droite */}
       <div className="text-right flex-shrink-0">
-        {originalPrice && timeRemaining ? (
+        {originalPrice || timeRemaining ? (
           <div className="flex items-center gap-2 justify-end">
-            <div className="text-sm text-muted-foreground line-through decoration-2 decoration-red-500">{originalPrice}</div>
-            <div className="text-2xl font-bold text-brand-purple">{price}</div>
+            <div className="text-sm text-muted-foreground line-through decoration-2 decoration-red-500">{price}</div>
+            <div className="text-2xl font-bold text-brand-purple">{originalPrice}</div>
           </div>
         ) : (
           <div className="text-2xl font-bold text-primary">{price}</div>

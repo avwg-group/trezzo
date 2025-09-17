@@ -21,7 +21,7 @@ import {
   AlertCircle,
   TrendingUp,
   TrendingDown,
-    ExternalLink,
+  ExternalLink,
 } from "lucide-react";
 import {
   Command,
@@ -266,7 +266,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   const [open, setOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<Discount | null>(null);
-  
+
   // États pour le dialog de redirection
   const [showRedirectDialog, setShowRedirectDialog] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
@@ -319,11 +319,13 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     // Gestion des différents types de prix
     if (product.product.pricing_type === "fixed") {
       originalPrice = extractNumericPrice(product.product.price);
-      
+
       // Vérifier s'il y a un prix promo valide et différent
-      if (product.product.promo_price && 
-          product.product.promo_price !== product.product.price &&
-          extractNumericPrice(product.product.promo_price) < originalPrice) {
+      if (
+        product.product.promo_price &&
+        product.product.promo_price !== product.product.price &&
+        extractNumericPrice(product.product.promo_price) < originalPrice
+      ) {
         basePrice = extractNumericPrice(product.product.promo_price);
         hasPromoPrice = true;
       } else {
@@ -355,8 +357,9 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const currency = selectedCountry?.currency || "USD";
 
     // Calcul des économies totales (promo + réduction)
-    const totalSavings = (originalPrice - finalPrice);
-    const savingsPercentage = totalSavings > 0 ? Math.round((totalSavings / originalPrice) * 100) : 0;
+    const totalSavings = originalPrice - finalPrice;
+    const savingsPercentage =
+      totalSavings > 0 ? Math.round((totalSavings / originalPrice) * 100) : 0;
 
     return {
       basePrice,
@@ -509,13 +512,17 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
         console.log("❌ Code promo invalide:", actionData.message);
       }
     }
-    
+
     // Gestion de la redirection après création de transaction
-    if (actionData?.type === "transaction" && actionData.success && actionData.payment_url) {
+    if (
+      actionData?.type === "transaction" &&
+      actionData.success &&
+      actionData.payment_url
+    ) {
       setPaymentUrl(actionData.payment_url);
       setShowRedirectDialog(true);
       setRedirectCountdown(5);
-      
+
       console.log("🔄 Redirection vers:", actionData.payment_url);
     }
   }, [actionData]);
@@ -523,7 +530,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   // Countdown pour la redirection automatique
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (showRedirectDialog && redirectCountdown > 0) {
       interval = setInterval(() => {
         setRedirectCountdown((prev) => {
@@ -538,7 +545,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
         });
       }, 1000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -583,10 +590,11 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 Transaction créée avec succès !
               </DialogTitle>
               <DialogDescription>
-                Vous allez être redirigé vers la page de paiement dans quelques secondes.
+                Vous allez être redirigé vers la page de paiement dans quelques
+                secondes.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="flex flex-col items-center gap-4 py-4">
               <div className="flex items-center gap-3">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -594,7 +602,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                   Redirection dans {redirectCountdown}s...
                 </span>
               </div>
-              
+
               <div className="text-center text-sm text-muted-foreground">
                 <p>Préparation de votre session de paiement sécurisé</p>
                 <p className="flex items-center justify-center gap-1 mt-1">
@@ -602,8 +610,8 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                   Connexion SSL chiffrée
                 </p>
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={handleManualRedirect}
                 className="w-full"
                 size="lg"
@@ -912,10 +920,11 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                                 "flex";
                             }}
                           />
-                        ) : null}
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm leading-tight">
@@ -981,8 +990,9 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                           {priceCalculations.savingsPercentage > 0 && (
                             <div className="text-xs text-green-600 flex items-center gap-1">
                               <TrendingDown className="h-3 w-3" />
-                              Économie de {priceCalculations.savingsPercentage}% 
-                              ({priceCalculations.totalSavings.toFixed(0)} {priceCalculations.currency})
+                              Économie de {priceCalculations.savingsPercentage}%
+                              ({priceCalculations.totalSavings.toFixed(0)}{" "}
+                              {priceCalculations.currency})
                             </div>
                           )}
                         </div>
