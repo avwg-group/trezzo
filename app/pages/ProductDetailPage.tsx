@@ -113,10 +113,9 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
   const [selectedImage, setSelectedImage] = useState(product?.product_image || '')
   
   // Vérifier si le produit a une promotion
-  const hasPromo = product?.promo_price && product.promo_price < product.price
+  const hasPromo = product?.promo_price 
   const displayPrice = hasPromo ? product.promo_price : product?.price
   const originalPrice = hasPromo ? product.price : null
-
   // Formatage des prix
   const formatPrice = (price: number) => `${price}`
 
@@ -149,7 +148,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
             {/* Titre et prix mobile */}
             <div className="lg:hidden">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                <Badge variant="outline" className="text-xs uppercase">{product.category}</Badge>
                 {hasPromo && (
                   <Badge variant="destructive" className="text-xs animate-pulse">PROMO</Badge>
                 )}
@@ -336,17 +335,14 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
           {/* Prix et bouton principal */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col">
                 <span className="text-2xl font-bold text-primary">{formatPrice(displayPrice!)}</span>
                 {originalPrice && (
-                  <span className="text-lg text-muted-foreground line-through decoration-2 decoration-destructive">
+                  <span className="text-xs text-muted-foreground line-through decoration-1 decoration-destructive -mt-1">
                     {formatPrice(originalPrice)}
                   </span>
                 )}
               </div>
-              {hasPromo && (
-                <div className="hidden text-xs text-green-600 font-medium">Économisez {formatPrice(originalPrice! - displayPrice!)}</div>
-              )}
             </div>
             <Button size="lg" className="flex-1 max-w-[180px] shadow-lg">
               <ShoppingCart className="h-5 w-5 mr-2" />
