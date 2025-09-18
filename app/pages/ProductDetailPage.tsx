@@ -137,12 +137,15 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
           {/* Section gauche - 2/3 de l'espace sur desktop */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image du produit */}
-            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-              <img 
-                src={selectedImage || product.product_image} 
-                alt={product.product_name}
-                className="w-full aspect-[1.91/1] sm:aspect-square max-w-[1200px] max-h-[1080px] object-cover hover:scale-105 transition-transform duration-300 cursor-zoom-in"
-              />
+            <div className="relative w-full overflow-hidden rounded-lg">
+              {/* Container with responsive aspect ratio */}
+              <div className="aspect-[4/3] sm:aspect-square md:aspect-[16/9] lg:aspect-[4/3]">
+                <img 
+                  src={selectedImage || product.product_image} 
+                  alt={product.product_name}
+                  className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-zoom-in"
+                />
+              </div>
             </div>
 
             {/* Titre et prix mobile */}
