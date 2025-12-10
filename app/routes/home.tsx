@@ -2,6 +2,32 @@ import type { Route } from "./+types/home";
 import { ProductService } from "~/services";
 import { HomePage } from "~/pages/HomePage";
 
+export async function loader({ request }: Route.LoaderArgs) {
+  try {
+    const productsResponse = await ProductService.getProducts({
+      page: 1,
+      limit: 20,
+      sortBy: 'created_at',
+      sortOrder: 'desc'
+    });
+    return {
+      featuredProducts: productsResponse.products.slice(0, 6),
+      allProducts: productsResponse.products,
+      shop: productsResponse.shop,
+      pagination: productsResponse.pagination
+    };
+  } catch (error) {
+    console.error('Erreur lors du chargement des produits (server):', error);
+    return {
+      featuredProducts: [],
+      allProducts: [],
+      shop: null,
+      pagination: null,
+      error: 'Impossible de charger les produits'
+    };
+  }
+}
+
 export async function clientLoader({
   request,
 }: Route.ClientLoaderArgs) {
@@ -50,48 +76,26 @@ export function HydrateFallback() {
 
 
 
-// Fonction meta pour le SEO dynamique
-export function meta({ data }: Route.MetaArgs) {
+export function meta({ data, location }: Route.MetaArgs) {
   const shop = data?.shop;
   const featuredProducts = data?.featuredProducts || [];
-  
-  // Données par défaut si pas de boutique
-  
-  
-  
-  // Construire le titre et la description
-  const title = shop ? `${shop.name}` : undefined;
-  const description = shop
-    ? `${shop.description || `Découvrez ${shop.name}, votre boutique en ligne de confiance.`} Livraison rapide et paiement sécurisé.`
-    : undefined;
-  
-  // URL canonique
-  const canonicalUrl = shop?.custom_domain 
-    ? `https://${shop.custom_domain}`
-    : undefined;
-  
-  // Image de la boutique (logo ou premier produit)
-  const ogImage = shop?.logo_url || "default-logo.png";
-  
-  // Mots-clés basés sur les catégories des produits
-  const categories = [...new Set(featuredProducts.map(p => p.category))].join(", ");
-  const keywords = shop 
-    ? `${shop.name}, boutique en ligne, ${categories}, ${shop.currency}, livraison`
-    : undefined;
+  const baseUrl = shop?.custom_domain ? `https://${shop.custom_domain}` : (shop?.slug ? `https://${shop.slug}.myzestylinks.com` : undefined);
+  const canonicalUrl = baseUrl ? `${baseUrl}${location.pathname}` : undefined;
+  const title = shop?.name || 'Boutique';
+  const description = shop?.description ? `${shop.description} Livraison rapide et paiement sécurisé.` : 'Découvrez notre boutique en ligne de confiance. Livraison rapide et paiement sécurisé.';
+  const primaryImage = featuredProducts[0]?.product_image || shop?.logo_url || '';
+  const ogImage = primaryImage.startsWith('http') ? primaryImage : (baseUrl ? `${baseUrl}${primaryImage.startsWith('/') ? primaryImage : `/${primaryImage}`}` : primaryImage);
+  const categories = [...new Set(featuredProducts.map(p => p.category))].filter(Boolean).join(", ");
+  const keywords = `${title}, boutique en ligne, ${categories}${shop?.currency ? `, ${shop.currency}` : ''}, livraison`;
 
   return [
-    // Balises SEO de base
     { title },
     { name: "description", content: description },
     { name: "keywords", content: keywords },
-    { name: "author", content: shop?.name },
+    { name: "author", content: title },
     { name: "robots", content: "index, follow" },
-    // Favicon
     { tagName: "link", rel: "icon", type: "image/x-icon", href: ogImage },
-    // Balises canoniques
     { tagName: "link", rel: "canonical", href: canonicalUrl },
-    
-    // Open Graph pour WhatsApp, Facebook, etc.
     { property: "og:type", content: "website" },
     { property: "og:site_name", content: title },
     { property: "og:title", content: title },
@@ -101,60 +105,47 @@ export function meta({ data }: Route.MetaArgs) {
     { property: "og:image:height", content: "630" },
     { property: "og:url", content: canonicalUrl },
     { property: "og:locale", content: "fr_FR" },
-    
-    // Twitter Card
+    ...(ogImage && ogImage.startsWith('https') ? [{ property: "og:image:secure_url", content: ogImage }] : []),
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: ogImage },
-    
-    // WhatsApp spécifique (utilise Open Graph)
-    { property: "og:image:alt", content: shop?.name ? `Logo de ${shop.name}` : undefined },
-    
-    // Balises e-commerce
-    { name: "product:price:currency", content: shop?.currency },
-    { name: "product:availability", content: "in stock" },
-    
-    // Geographic tags for African countries
-    [
-      { name: "geo.region", content: "AF" },
-      { name: "geo.country", content: "Africa" },
-      { name: "geo.countries", content: "Cameroon, Chad, Central African Republic, Republic of the Congo, Equatorial Guinea, Gabon, Benin, Burkina Faso, Ivory Coast, Guinea-Bissau, Mali, Niger, Senegal, Togo" },
-    ],
-    
-    // Schema.org JSON-LD pour le référencement
+    { property: "og:image:alt", content: `${title}` },
+    { name: "geo.region", content: "AF" },
+    { name: "geo.country", content: "Africa" },
+    { name: "geo.countries", content: "Cameroon, Chad, Central African Republic, Republic of the Congo, Equatorial Guinea, Gabon, Benin, Burkina Faso, Ivory Coast, Guinea-Bissau, Mali, Niger, Senegal, Togo" },
     {
       tagName: "script",
       type: "application/ld+json",
       children: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Store",
-        "name": title,
-        "description": description,
-        "url": canonicalUrl,
-        "logo": ogImage,
-        "image": ogImage,
-        "currenciesAccepted": shop?.currency,
-        "paymentAccepted": "Mobile Money, Carte bancaire",
-        "priceRange": featuredProducts.length > 0 && shop?.currency
+        name: title,
+        description,
+        url: canonicalUrl,
+        logo: ogImage,
+        image: ogImage,
+        currenciesAccepted: shop?.currency,
+        paymentAccepted: "Mobile Money, Carte bancaire",
+        priceRange: featuredProducts.length > 0 && shop?.currency
           ? `${Math.min(...featuredProducts.map(p => p.price))} - ${Math.max(...featuredProducts.map(p => p.price))} ${shop.currency}`
           : undefined,
-        "hasOfferCatalog": {
+        hasOfferCatalog: {
           "@type": "OfferCatalog",
-          "name": "Catalogue produits",
-          "itemListElement": featuredProducts.slice(0, 3).map((product, index) => ({
+          name: "Catalogue produits",
+          itemListElement: featuredProducts.slice(0, 3).map((product, index) => ({
             "@type": "Offer",
-            "position": index + 1,
-            "itemOffered": {
+            position: index + 1,
+            itemOffered: {
               "@type": "Product",
-              "name": product.product_name,
-              "description": product.description,
-              "image": product.product_image,
-              "offers": {
+              name: product.product_name,
+              description: product.description,
+              image: product.product_image,
+              offers: {
                 "@type": "Offer",
-                "price": product.promo_price || product.price,
-                "priceCurrency": shop?.currency,
-                "availability": "https://schema.org/InStock"
+                price: product.promo_price || product.price,
+                priceCurrency: shop?.currency,
+                availability: "https://schema.org/InStock"
               }
             }
           }))
