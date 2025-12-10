@@ -57,11 +57,11 @@ export function meta({ data }: Route.MetaArgs) {
   
   // Données par défaut si pas de boutique
   const defaultTitle = "MyZestylinks";
-  const defaultDescription = "MyZestylinks - Your trusted online marketplace for quality products and secure transactions";
+  const defaultDescription = "MyZestylinks Your trusted online marketplace for quality products and secure transactions";
   
   // Construire le titre et la description
   const title = shop ? `${shop.name}` : defaultTitle;
-  const description = shop 
+  const description = shop
     ? `${shop.description || `Découvrez ${shop.name}, votre boutique en ligne de confiance.`} Livraison rapide et paiement sécurisé.`
     : defaultDescription;
   
