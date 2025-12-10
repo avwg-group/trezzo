@@ -27,7 +27,7 @@ export interface ApiClientOptions {
   defaultHeaders?: Record<string, string>;
   timeout?: number;
 }
- const baseUrl = "http://127.0.0.1:8380/api/v1";
+ const baseUrl = "https://s8wkoswgs48w4840w0k4ss4c.23.82.99.43.sslip.io/api/v1"// "http://127.0.0.1:8380/api/v1";
 
 export class ApiClient {
   private axiosInstance: AxiosInstance;
