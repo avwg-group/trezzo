@@ -591,7 +591,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
           }
           return prev - 1;
         });
-      }, 100000);
+      }, 5000);
     }
 
     return () => {
