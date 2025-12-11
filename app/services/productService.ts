@@ -115,7 +115,8 @@ export class ProductService {
     productData: {
       product_id: string;
       shop_id: string;
-      amount: string | number; // Prix qui peut contenir une devise
+      amount: string | number;
+      currency?: string;
     },
     discountId?: string
   ): Promise<CreateTransactionResponse> {
@@ -151,11 +152,11 @@ export class ProductService {
         phone: clientData.phone,
         country: locationData.country_name,
         city: locationData.city,
-        operator: undefined, // À déterminer selon le pays/opérateur
+        operator: undefined,
         type: 'purchase',
-        payment_method: undefined, // À déterminer selon la région
-        currency: locationData.currency,
-        amount: cleanAmount.toString(), // Convertir en string pour le backend
+        payment_method: undefined,
+        currency: productData.currency || locationData.currency,
+        amount: cleanAmount.toString(),
         shop_id: productData.shop_id,
         product_id: productData.product_id,
         discount_id: discountId || undefined

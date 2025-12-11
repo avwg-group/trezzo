@@ -130,10 +130,11 @@ export async function clientAction({
         };
         
         const productData = {
-          product_id: formData.get('productId') as string,
-          shop_id: formData.get('shopId') as string,
-          amount: formData.get('amount') as string // Garder en string
-        };
+      product_id: formData.get('productId') as string,
+      shop_id: formData.get('shopId') as string,
+      amount: formData.get('amount') as string,
+      currency: (formData.get('currency') as string) || undefined
+    };
         
         // Récupérer l'ID de la réduction si appliquée
         const discountId = formData.get('discountId') as string || undefined;

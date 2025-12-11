@@ -507,6 +507,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     submitFormData.append("productId", product.product.id);
     submitFormData.append("shopId", shop?.id);
     submitFormData.append("amount", priceCalculations.finalPrice.toString());
+    submitFormData.append("currency", selectedCountry?.currency || "");
 
     // Ajouter l'ID de la réduction si appliquée
     if (appliedDiscount?.id) {
