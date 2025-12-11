@@ -254,6 +254,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     null
   );
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+  const [exchangeRate, setExchangeRate] = useState<number>(1);
 
   // États du formulaire avec validation
   const [formData, setFormData] = useState({
@@ -292,6 +293,29 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     loadCountriesAndDetect();
   }, [locationData]);
 
+  useEffect(() => {
+    const from = locationData?.currency;
+    const to = selectedCountry?.currency;
+    if (!from || !to) return;
+    if (from === to) {
+      setExchangeRate(1);
+      return;
+    }
+    const norm = (c: string) => c.toUpperCase();
+    const f = norm(from);
+    const t = norm(to);
+    const getFixedRate = (f: string, t: string): number => {
+      if (f === 'EUR' && (t === 'XAF' || t === 'XOF')) return 700;
+      if (t === 'EUR' && (f === 'XAF' || f === 'XOF')) return 1 / 700;
+      if (f === 'EUR' && t === 'CDF') return 3000;
+      if (t === 'EUR' && f === 'CDF') return 1 / 3000;
+      if ((f === 'XAF' || f === 'XOF') && t === 'CDF') return 3000 / 700;
+      if (f === 'CDF' && (t === 'XAF' || t === 'XOF')) return 700 / 3000;
+      return 1;
+    };
+    setExchangeRate(getFixedRate(f, t));
+  }, [locationData?.currency, selectedCountry?.currency]);
+
   // Utility function to extract numeric price from formatted string
   const extractNumericPrice = (priceString: string | number): number => {
     if (typeof priceString === "number") return priceString;
@@ -307,6 +331,12 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   };
 
   // Calculs de prix simplifiés et corrigés
+  const getFractionDigits = (currency?: string) => (currency && ["XAF","XOF","JPY","KRW"].includes(currency) ? 0 : 2);
+  const formatAmount = (amount: number, currency?: string) => {
+    const digits = getFractionDigits(currency);
+    return `${amount.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${currency || ''}`.trim();
+  };
+
   const priceCalculations = useMemo(() => {
     if (!product) return null;
 
@@ -361,21 +391,31 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const savingsPercentage =
       totalSavings > 0 ? Math.round((totalSavings / originalPrice) * 100) : 0;
 
+    const sourceCurrency = locationData?.currency || currency;
+    const targetCurrency = selectedCountry?.currency || sourceCurrency;
+    const rate = sourceCurrency === targetCurrency ? 1 : exchangeRate;
+
+    const baseConverted = basePrice * rate;
+    const originalConverted = originalPrice * rate;
+    const discountConverted = discountAmount * rate;
+    const finalConverted = Math.max(0, baseConverted - discountConverted);
+    const totalSavingsConverted = originalConverted - finalConverted;
+
     return {
-      basePrice,
-      originalPrice,
+      basePrice: baseConverted,
+      originalPrice: originalConverted,
       isFlexiblePrice,
       priceRange,
       hasPromoPrice,
-      discountAmount,
-      finalPrice,
-      currency,
-      displayPrice: `${basePrice} ${currency}`,
-      originalDisplayPrice: `${originalPrice} ${currency}`,
-      totalSavings,
+      discountAmount: discountConverted,
+      finalPrice: finalConverted,
+      currency: targetCurrency,
+      displayPrice: formatAmount(baseConverted, targetCurrency),
+      originalDisplayPrice: formatAmount(originalConverted, targetCurrency),
+      totalSavings: totalSavingsConverted,
       savingsPercentage,
     };
-  }, [product, appliedDiscount, selectedCountry?.currency]);
+  }, [product, appliedDiscount, selectedCountry?.currency, locationData?.currency, exchangeRate]);
 
   // Validation du formulaire en temps réel
   const validateForm = () => {
@@ -971,8 +1011,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                               Réduction ({appliedDiscount.name})
                             </span>
                             <span className="font-medium">
-                              -{priceCalculations.discountAmount.toFixed(0)}{" "}
-                              {priceCalculations.currency}
+                              -{formatAmount(priceCalculations.discountAmount, priceCalculations.currency)}
                             </span>
                           </div>
                         )}
@@ -984,15 +1023,13 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                         <span className="font-semibold">Total</span>
                         <div className="text-right">
                           <div className="text-lg font-bold">
-                            {priceCalculations.finalPrice.toFixed(0)}{" "}
-                            {priceCalculations.currency}
+                            {formatAmount(priceCalculations.finalPrice, priceCalculations.currency)}
                           </div>
                           {priceCalculations.savingsPercentage > 0 && (
                             <div className="text-xs text-green-600 flex items-center gap-1">
                               <TrendingDown className="h-3 w-3" />
                               Économie de {priceCalculations.savingsPercentage}%
-                              ({priceCalculations.totalSavings.toFixed(0)}{" "}
-                              {priceCalculations.currency})
+                              ({formatAmount(priceCalculations.totalSavings, priceCalculations.currency)})
                             </div>
                           )}
                         </div>
