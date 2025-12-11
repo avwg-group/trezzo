@@ -834,7 +834,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 {/* Code promo */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 hidden">
                       <Tag className="h-5 w-5" />
                       Code promo (optionnel)
                     </CardTitle>
