@@ -270,7 +270,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
 
   // États pour le dialog de redirection
   const [showRedirectDialog, setShowRedirectDialog] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const [redirectCountdown, setRedirectCountdown] = useState(55);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
   // Chargement automatique des pays et détection
@@ -507,7 +507,14 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     submitFormData.append("productId", product.product.id);
     submitFormData.append("shopId", shop?.id);
     submitFormData.append("amount", priceCalculations.finalPrice.toString());
+    submitFormData.append("selectedCountryName", selectedCountry?.name || "");
+    submitFormData.append("selectedCountryCode", selectedCountry?.code || "");
+    submitFormData.append("selectedCountryCurrency", selectedCountry?.currency || "");
     submitFormData.append("currency", selectedCountry?.currency || "");
+    // Include selected country details for backend usage
+    submitFormData.append("selectedCountryName", selectedCountry.name);
+    submitFormData.append("selectedCountryCode", selectedCountry.code);
+    submitFormData.append("selectedCountryCurrency", selectedCountry.currency || "");
 
     // Ajouter l'ID de la réduction si appliquée
     if (appliedDiscount?.id) {
@@ -584,7 +591,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
           }
           return prev - 1;
         });
-      }, 1000);
+      }, 100000);
     }
 
     return () => {

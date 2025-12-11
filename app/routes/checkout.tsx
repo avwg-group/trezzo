@@ -139,16 +139,23 @@ export async function clientAction({
         // Récupérer l'ID de la réduction si appliquée
         const discountId = formData.get('discountId') as string || undefined;
         
-        console.log('💳 Creating transaction:', { 
-          clientData, 
-          productData, 
-          discountId: discountId || 'none' 
+        console.log('💳 Creating transaction:', {
+          clientData,
+          productData,
+          discountId: discountId || 'none'
         });
         
+        const selectedCountryCurrency = formData.get('selectedCountryCurrency') as string | null;
+        const selectedCountryName = formData.get('selectedCountryName') as string | null;
+
         const transactionResponse = await ProductService.createTransaction(
-          clientData, 
-          productData, 
-          discountId
+          clientData,
+          productData,
+          discountId,
+          {
+            currency: selectedCountryCurrency || undefined,
+            country: selectedCountryName || undefined
+          }
         );
         
         // Vérifier le succès et retourner les données de transaction

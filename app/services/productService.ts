@@ -118,7 +118,8 @@ export class ProductService {
       amount: string | number;
       currency?: string;
     },
-    discountId?: string
+    discountId?: string,
+    overrides?: { country?: string; currency?: string }
   ): Promise<CreateTransactionResponse> {
     try {
       // Validation des données client
@@ -145,17 +146,19 @@ export class ProductService {
         throw new Error('Impossible de récupérer les données de géolocalisation');
       }
       
-      // Construire la requête de transaction
+      const countryName = overrides?.country || locationData.country_name;
+      const currencyValue = productData.currency || overrides?.currency || locationData.currency;
+
       const transactionRequest: CreateTransactionRequest = {
         client_name: clientData.client_name,
         email: clientData.email,
         phone: clientData.phone,
-        country: locationData.country_name,
+        country: countryName,
         city: locationData.city,
         operator: undefined,
         type: 'purchase',
         payment_method: undefined,
-        currency: productData.currency || locationData.currency,
+        currency: currencyValue,
         amount: cleanAmount.toString(),
         shop_id: productData.shop_id,
         product_id: productData.product_id,
