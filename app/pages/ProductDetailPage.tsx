@@ -347,10 +347,12 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                 )}
               </div>
             </div>
+            <Link to={`/${product.slug}/checkout?productSlug=${product.slug}`}>
             <Button size="lg" className="flex-1 max-w-[180px] shadow-lg">
               <ShoppingCart className="h-5 w-5 mr-2" />
               Acheter
             </Button>
+            </Link>
           </div>
           
           {/* Logos moyens de paiement mobile */}
