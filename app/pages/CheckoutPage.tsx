@@ -591,7 +591,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
           }
           return prev - 1;
         });
-      }, 5000);
+      }, 1000);
     }
 
     return () => {
@@ -880,9 +880,9 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                 </Card>
 
                 {/* Code promo */}
-                <Card>
+                <Card className="hidden">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 hidden">
+                    <CardTitle className="flex items-center gap-2">
                       <Tag className="h-5 w-5" />
                       Code promo (optionnel)
                     </CardTitle>
