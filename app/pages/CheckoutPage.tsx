@@ -179,7 +179,6 @@ interface CheckoutPageProps {
   loaderData: {
     product: ProductDetails;
     shop: any;
-    locationData: any;
     error: string | null;
   };
   actionData?: {
@@ -192,7 +191,7 @@ interface CheckoutPageProps {
 }
 
 export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
-  const { product, shop, locationData, error } = loaderData;
+  const { product, shop, error } = loaderData;
   console.log("product", product.product.id);
 
   const submit = useSubmit();
@@ -230,7 +229,6 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       try {
         const countriesData = await fetchCountryData();
         setCountries(countriesData);
-        // Pas de sélection automatique, l'utilisateur doit choisir
       } catch (error) {
         console.error("Erreur lors du chargement des pays:", error);
       } finally {
@@ -242,8 +240,18 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   }, []);
 
   useEffect(() => {
-    const from = locationData?.currency;
-    const to = selectedCountry?.currency;
+    const from = shop?.currency || 'EUR';
+    let to = selectedCountry?.currency;
+
+    // Si un pays est sélectionné mais n'est pas XAF/XOF/CDF, forcer USD
+    if (selectedCountry) {
+      if (!['XAF', 'XOF', 'CDF'].includes(selectedCountry.currency || '')) {
+        to = 'USD';
+      }
+    } else {
+      to = from;
+    }
+
     if (!from || !to) return;
     if (from === to) {
       setExchangeRate(1);
@@ -259,10 +267,15 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       if (t === 'EUR' && f === 'CDF') return 1 / 3000;
       if ((f === 'XAF' || f === 'XOF') && t === 'CDF') return 3000 / 700;
       if (f === 'CDF' && (t === 'XAF' || t === 'XOF')) return 700 / 3000;
+      
+      // Fallback USD avec taux fixe (1 EUR = 1.1 USD)
+      if (f === 'EUR' && t === 'USD') return 1.1;
+      if (t === 'EUR' && f === 'USD') return 1 / 1.1;
+      
       return 1;
     };
     setExchangeRate(getFixedRate(f, t));
-  }, [locationData?.currency, selectedCountry?.currency]);
+  }, [shop?.currency, selectedCountry]);
 
   // Utility function to extract numeric price from formatted string
   const extractNumericPrice = (priceString: string | number): number => {
@@ -332,15 +345,22 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     }
 
     const finalPrice = Math.max(0, basePrice - discountAmount);
-    const currency = selectedCountry?.currency || "USD";
+    
+    // Déterminer la devise cible (XAF/XOF/CDF ou USD)
+    let currency = shop?.currency || 'EUR';
+    if (selectedCountry) {
+      currency = ['XAF', 'XOF', 'CDF'].includes(selectedCountry.currency || '') 
+        ? selectedCountry.currency 
+        : 'USD';
+    }
 
     // Calcul des économies totales (promo + réduction)
     const totalSavings = originalPrice - finalPrice;
     const savingsPercentage =
       totalSavings > 0 ? Math.round((totalSavings / originalPrice) * 100) : 0;
 
-    const sourceCurrency = locationData?.currency || currency;
-    const targetCurrency = selectedCountry?.currency || sourceCurrency;
+    const sourceCurrency = shop?.currency || 'EUR';
+    const targetCurrency = currency;
     const rate = sourceCurrency === targetCurrency ? 1 : exchangeRate;
 
     const baseConverted = basePrice * rate;
@@ -363,7 +383,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       totalSavings: totalSavingsConverted,
       savingsPercentage,
     };
-  }, [product, appliedDiscount, selectedCountry?.currency, locationData?.currency, exchangeRate]);
+  }, [product, appliedDiscount, selectedCountry, shop?.currency, exchangeRate]);
 
   // Validation du formulaire en temps réel
   const validateForm = () => {
@@ -458,7 +478,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     submitFormData.append("selectedCountryName", selectedCountry?.name || "");
     submitFormData.append("selectedCountryCode", selectedCountry?.code || "");
     submitFormData.append("selectedCountryCurrency", selectedCountry?.currency || "");
-    submitFormData.append("currency", selectedCountry?.currency || "");
+    submitFormData.append("currency", priceCalculations.currency);
     // Include selected country details for backend usage
     submitFormData.append("selectedCountryName", selectedCountry.name);
     submitFormData.append("selectedCountryCode", selectedCountry.code);
@@ -626,7 +646,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
               <h1 className="text-3xl font-semibold text-foreground mb-2">
                 Finaliser la commande
               </h1>
-              {locationData && selectedCountry && (
+              {selectedCountry && (
                 <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />

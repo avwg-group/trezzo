@@ -2,13 +2,11 @@ import type { Route } from "./+types/checkout";
 import { ProductService } from "~/services/productService";
 import { CheckoutPage } from "~/pages/CheckoutPage";
 import { redirect } from "react-router";
-import LocationService from "~/services/locationService";
 
 // Interface pour les données du checkout
 interface CheckoutLoaderData {
   product: any;
   shop: any;
-  locationData: any;
   error: string | null;
 }
 
@@ -28,16 +26,12 @@ export async function clientLoader({
 
     console.log('🔍 Loading checkout data for product:', productSlug);
     
-    // Récupérer les données en parallèle
-    const [productResponse, locationData] = await Promise.all([
-      ProductService.getProductDetails(productSlug),
-      LocationService.getLocationData()
-    ]);
+    // Récupérer les données du produit
+    const productResponse = await ProductService.getProductDetails(productSlug);
 
     return {
       product: productResponse,
       shop: productResponse?.shop || { name: 'Boutique', logo_url: "default-logo.png" }, // Récupérer depuis le produit
-      locationData,
       error: null
     };
   } catch (error) {
@@ -46,7 +40,6 @@ export async function clientLoader({
     return {
       product: null,
       shop: null,
-      locationData: null,
       error: error instanceof Error ? error.message : 'Erreur de chargement'
     };
   }
