@@ -7,7 +7,14 @@ export class ProductService {
   static async getUserCurrency(): Promise<string | null> {
     try {
       const locationData = await LocationService.getLocationData();
-      return locationData?.currency || null;
+      const currency = locationData?.currency || null;
+      
+      // Si la devise n'est pas XAF, XOF ou CDF, utiliser XAF par défaut
+      if (currency && !['XAF', 'XOF', 'CDF'].includes(currency)) {
+        return 'XAF';
+      }
+      
+      return currency;
     } catch (error) {
       console.error('❌ Error getting user currency:', error);
       return null;
