@@ -8,6 +8,7 @@ interface CheckoutLoaderData {
   product: any;
   shop: any;
   error: string | null;
+  originalCurrency: string | null;
 }
 
 // Client Loader - Récupère les données du produit et de géolocalisation
@@ -18,6 +19,7 @@ export async function clientLoader({
     const url = new URL(request.url);
     const pathname = url.pathname; // e.g. "/tester-de-prix/checkout"
     const productSlug = pathname.split('/')[1]; // Get "tester-de-prix" dynamically
+    const currency = url.searchParams.get('currency');
     console.log("Product slug from pathname : ", productSlug);
     
     if (!productSlug) {
@@ -32,7 +34,8 @@ export async function clientLoader({
     return {
       product: productResponse,
       shop: productResponse?.shop || { name: 'Boutique', logo_url: "default-logo.png" }, // Récupérer depuis le produit
-      error: null
+      error: null,
+      originalCurrency: currency || null
     };
   } catch (error) {
     console.error('❌ Checkout loader error:', error);
@@ -40,7 +43,8 @@ export async function clientLoader({
     return {
       product: null,
       shop: null,
-      error: error instanceof Error ? error.message : 'Erreur de chargement'
+      error: error instanceof Error ? error.message : 'Erreur de chargement',
+      originalCurrency: null
     };
   }
 }

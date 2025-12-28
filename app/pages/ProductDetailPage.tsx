@@ -298,7 +298,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                       </div>
                     </div>
                     
-                    <Link to={`/${product.slug}/checkout?productSlug=${product.slug}`} className="block">
+                    <Link to={`/${product.slug}/checkout?productSlug=${product.slug}&currency=${shop?.currency || 'EUR'}`} className="block">
                       <Button size="lg" className="w-full mb-6">
                         <ShoppingCart className="h-5 w-5 mr-2" />
                         Acheter maintenant
@@ -347,7 +347,7 @@ export function ProductDetailPage({ loaderData }: ProductDetailPageProps) {
                 )}
               </div>
             </div>
-            <Link to={`/${product.slug}/checkout?productSlug=${product.slug}`}>
+            <Link to={`/${product.slug}/checkout?productSlug=${product.slug}&currency=${shop?.currency || 'EUR'}`}>
             <Button size="lg" className="flex-1 max-w-[180px] shadow-lg">
               <ShoppingCart className="h-5 w-5 mr-2" />
               Acheter

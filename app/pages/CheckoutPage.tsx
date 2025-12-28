@@ -180,6 +180,7 @@ interface CheckoutPageProps {
     product: ProductDetails;
     shop: any;
     error: string | null;
+    originalCurrency?: string | null;
   };
   actionData?: {
     type: string;
@@ -191,7 +192,7 @@ interface CheckoutPageProps {
 }
 
 export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
-  const { product, shop, error } = loaderData;
+  const { product, shop, error, originalCurrency } = loaderData;
   console.log("product", product.product.id);
 
   const submit = useSubmit();
@@ -240,7 +241,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   }, []);
 
   useEffect(() => {
-    const from = shop?.currency || 'EUR';
+    const from = originalCurrency || shop?.currency || 'EUR';
     let to = selectedCountry?.currency;
 
     // Si un pays est sélectionné mais n'est pas XAF/XOF/CDF, forcer USD
@@ -275,7 +276,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       return 1;
     };
     setExchangeRate(getFixedRate(f, t));
-  }, [shop?.currency, selectedCountry]);
+  }, [shop?.currency, selectedCountry, originalCurrency]);
 
   // Utility function to extract numeric price from formatted string
   const extractNumericPrice = (priceString: string | number): number => {
@@ -359,7 +360,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const savingsPercentage =
       totalSavings > 0 ? Math.round((totalSavings / originalPrice) * 100) : 0;
 
-    const sourceCurrency = shop?.currency || 'EUR';
+    const sourceCurrency = originalCurrency || shop?.currency || 'EUR';
     const targetCurrency = currency;
     const rate = sourceCurrency === targetCurrency ? 1 : exchangeRate;
 
@@ -383,7 +384,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       totalSavings: totalSavingsConverted,
       savingsPercentage,
     };
-  }, [product, appliedDiscount, selectedCountry, shop?.currency, exchangeRate]);
+  }, [product, appliedDiscount, selectedCountry, shop?.currency, exchangeRate, originalCurrency]);
 
   // Validation du formulaire en temps réel
   const validateForm = () => {
