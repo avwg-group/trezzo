@@ -172,58 +172,8 @@ const fetchCountryData = async (): Promise<CountryData[]> => {
 };
 
 // Fonction pour sélection manuelle du pays (plus de détection automatique)
-const selectUserCountry = async (
-  locationData: any,
-  shopCurrency?: string
-): Promise<CountryData> => {
-  const countries = await fetchCountryData();
+// La fonction selectUserCountry a été supprimée pour éviter toute suggestion automatique
 
-  // Priorité 1: Devise du shop
-  if (shopCurrency) {
-    const shopCountry = countries.find((c) => c.currency === shopCurrency);
-    if (shopCountry) {
-      console.log(
-        `🏪 Pays suggéré via shop: ${shopCountry.name} (${shopCountry.currency})`
-      );
-      return shopCountry;
-    }
-  }
-
-  // Priorité 2: Code pays de géolocalisation
-  if (locationData?.country_code) {
-    const suggestedCountry = countries.find(
-      (c) => c.code.toLowerCase() === locationData.country_code.toLowerCase()
-    );
-    if (suggestedCountry) {
-      console.log(`🌍 Pays suggéré: ${suggestedCountry.name}`);
-      return suggestedCountry;
-    }
-  }
-
-  // Priorité 3: Devise de géolocalisation
-  if (locationData?.currency) {
-    const currencyCountry = countries.find(
-      (c) => c.currency === locationData.currency
-    );
-    if (currencyCountry) {
-      console.log(
-        `💰 Pays suggéré via devise: ${currencyCountry.name} (${currencyCountry.currency})`
-      );
-      return currencyCountry;
-    }
-  }
-
-  // Fallback vers le premier pays disponible
-  return (
-    countries[0] || {
-      name: "France",
-      code: "FR",
-      dialCode: "+33",
-      flag: "🇫🇷",
-      currency: "EUR",
-    }
-  );
-};
 
 interface CheckoutPageProps {
   loaderData: {
@@ -273,16 +223,14 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   const [redirectCountdown, setRedirectCountdown] = useState(55);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
-  // Chargement automatique des pays et détection
+  // Chargement des pays (sans détection automatique)
   useEffect(() => {
-    const loadCountriesAndDetect = async () => {
+    const loadCountries = async () => {
       setIsLoadingCountries(true);
       try {
         const countriesData = await fetchCountryData();
         setCountries(countriesData);
-
-        const detectedCountry = await selectUserCountry(locationData);
-        setSelectedCountry(detectedCountry);
+        // Pas de sélection automatique, l'utilisateur doit choisir
       } catch (error) {
         console.error("Erreur lors du chargement des pays:", error);
       } finally {
@@ -290,8 +238,8 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       }
     };
 
-    loadCountriesAndDetect();
-  }, [locationData]);
+    loadCountries();
+  }, []);
 
   useEffect(() => {
     const from = locationData?.currency;
@@ -683,7 +631,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
                     <span>
-                      {locationData.city}, {selectedCountry.name}
+                      {selectedCountry.name}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
