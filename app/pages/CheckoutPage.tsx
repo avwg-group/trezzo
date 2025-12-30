@@ -266,7 +266,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
       if (t === 'EUR' && (f === 'XAF' || f === 'XOF')) return 1 / 700;
       if (f === 'EUR' && t === 'CDF') return 3000;
       if (t === 'EUR' && f === 'CDF') return 1 / 3000;
-      if ((f === 'XAF' || f === 'XOF') && t === 'CDF') return 3000 / 700;
+      if ((f === 'XAF' || f === 'XOF  ') && t === 'CDF') return 3000 / 700;
       if (f === 'CDF' && (t === 'XAF' || t === 'XOF')) return 700 / 3000;
       
       // Fallback USD avec taux fixe (1 EUR = 1.1 USD)
@@ -538,7 +538,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     ) {
       setPaymentUrl(actionData.payment_url);
       setShowRedirectDialog(true);
-      setRedirectCountdown(5);
+      setRedirectCountdown(3);
 
       console.log("🔄 Redirection vers:", actionData.payment_url);
     }
@@ -630,7 +630,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
 
               <Button
                 onClick={handleManualRedirect}
-                className="w-full"
+                className="w-full hidden"
                 size="lg"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
