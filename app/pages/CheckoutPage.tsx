@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Layout } from "~/components/Layout";
 import { Form, useSubmit, useNavigation } from "react-router";
 import {
@@ -19,7 +18,6 @@ import {
   Loader2,
   Zap,
   AlertCircle,
-  TrendingUp,
   TrendingDown,
   ExternalLink,
 } from "lucide-react";
@@ -120,7 +118,7 @@ const fetchCountryData = async (): Promise<CountryData[]> => {
       .filter((country: CountryData) => country.dialCode)
       .sort((a: CountryData, b: CountryData) => a.name.localeCompare(b.name));
 
-    // Mettre à jour le cache
+    // Mettre à jour le 
     countriesCache = processedCountries;
     cacheTimestamp = now;
 

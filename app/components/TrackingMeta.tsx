@@ -1,4 +1,4 @@
-import { Meta } from 'react-router';
+
 import { useEffect, useState } from 'react';
 import { PixelService, type Pixel } from '../services/pixelService';
 

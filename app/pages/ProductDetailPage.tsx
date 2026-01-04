@@ -10,7 +10,6 @@ import {
   Mail, 
   Shield, 
   Headphones,
-  Users,
   Star,
   ChevronLeft,
   ChevronRight,

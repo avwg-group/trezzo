@@ -1,7 +1,6 @@
 import type { Route } from "./+types/checkout";
 import { ProductService } from "~/services/productService";
 import { CheckoutPage } from "~/pages/CheckoutPage";
-import { redirect } from "react-router";
 
 // Interface pour les données du checkout
 interface CheckoutLoaderData {
