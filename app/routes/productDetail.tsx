@@ -137,38 +137,69 @@ export function meta({ data, location }: Route.MetaArgs) {
     ];
   }
 
-  const productName = product.product_name || "Produit";
-  const shopName = shop.name || "Boutique";
-  const description = product.description || `Découvrez ${productName} sur ${shopName}`;
-  const productImage = product.product_image || shop.logo_url || "default-logo.png";
-
+  const productName = product.product_name;
+  const shopName = shop.name;
+  const description = product.description ? product.description.substring(0, 160) : `Découvrez ${productName} sur ${shopName}`;
+  
   // Build canonical URL
-  const canonicalUrl = shop.custom_domain 
-    ? `https://${shop.custom_domain}${location.pathname}`
-    : `https://${shop.slug}.myzestylinks.com${location.pathname}`;
+  const baseUrl = shop.custom_domain 
+    ? `https://${shop.custom_domain}`
+    : `https://${shop.slug}.myzestylinks.com`;
+  const canonicalUrl = `${baseUrl}${location.pathname}`;
+
+  // Image handling - ensure absolute URL
+  const rawImage = product.product_image || shop.logo_url;
+  const ogImage = rawImage 
+    ? (rawImage.startsWith('http') ? rawImage : `${baseUrl}${rawImage.startsWith('/') ? rawImage : `/${rawImage}`}`)
+    : `${baseUrl}/og-default.jpg`; // Fallback to a default public image if needed
 
   return [
     { title: `${productName} - ${shopName}` },
-    { name: "description", content: description.substring(0, 160) },
+    { name: "description", content: description },
     { name: "robots", content: "index, follow" },
-       // Favicon
-    { tagName: "link", rel: "icon", type: "image/x-icon", href: productImage }, 
-    // Open Graph basic tags
-    { property: "og:title", content: `${productName} - ${shopName}` },
-    { property: "og:description", content: description.substring(0, 160) },
-    { property: "og:type", content: "product" },
-    { property: "og:image", content: productImage },
-    { property: "og:url", content: canonicalUrl },
     
-    // Basic Schema.org
+    // Open Graph / Facebook / WhatsApp
+    { property: "og:type", content: "product" },
+    { property: "og:site_name", content: shopName },
+    { property: "og:title", content: productName },
+    { property: "og:description", content: description },
+    { property: "og:image", content: ogImage },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
+    { property: "og:url", content: canonicalUrl },
+    { property: "og:price:amount", content: product.promo_price || product.price },
+    { property: "og:price:currency", content: shop.currency || "XAF" },
+
+    // Twitter
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: productName },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: ogImage },
+    { property: "twitter:image:alt", content: productName },
+
+    // Favicon & Canonical
+    { tagName: "link", rel: "icon", type: "image/x-icon", href: ogImage }, 
+    { tagName: "link", rel: "canonical", href: canonicalUrl },
+    
+    // Schema.org Product
     {
       "script:ld+json": {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": productName,
         "description": description,
-        "image": productImage,
-        "url": canonicalUrl
+        "image": ogImage,
+        "url": canonicalUrl,
+        "offers": {
+          "@type": "Offer",
+          "price": product.promo_price || product.price,
+          "priceCurrency": shop.currency || "XAF",
+          "availability": "https://schema.org/InStock",
+          "seller": {
+            "@type": "Organization",
+            "name": shopName
+          }
+        }
       }
     }
   ];
