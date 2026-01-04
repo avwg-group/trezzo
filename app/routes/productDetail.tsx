@@ -14,11 +14,17 @@ export async function loader({
       throw new Error('Slug du produit manquant');
     }
 
+    // Détection basique des crawlers sociaux pour éviter les erreurs de tenant/API
+    const userAgent = request.headers.get("user-agent") || "";
+    const isSocialCrawler = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|Googlebot|bingbot/i.test(userAgent);
+    const host = request.headers.get("host") || "";
+
     const url = new URL(request.url);
     const reviewsPage = parseInt(url.searchParams.get('reviews_page') || '1');
     const reviewsLimit = parseInt(url.searchParams.get('reviews_limit') || '10');
 
-    console.log('🔍 SSR Loading product details for slug:', slug);
+    console.log('🔍 SSR Loading product details for slug:', slug, 'UA:', userAgent);
+    
     // Passer la requête pour le contexte tenant en SSR
     const response = await ProductService.getProductDetails(slug, reviewsPage, reviewsLimit, request);
     
@@ -32,6 +38,10 @@ export async function loader({
     };
   } catch (error) {
     console.error('❌ SSR Product detail loader error:', error);
+    
+    // Si c'est un crawler social et qu'on a une erreur, essayer de retourner des données minimales
+    // pour éviter "Produit non trouvé" si possible (dépend de ce qu'on peut récupérer)
+    // Ici on retourne l'erreur mais on va gérer l'affichage meta plus bas
     
     return {
       product: null,
@@ -127,14 +137,13 @@ export function HydrateFallback() {
 
 export function meta({ data, location }: Route.MetaArgs) {
   const { product, shop, error } = data || {};
-  console.log("detailproduct",product);
+  console.log("detailproduct meta:", product ? "Found" : "Not Found", error);
   
+  // Si erreur ou pas de produit, ne rien retourner (ou retourner des tags vides)
+  // pour éviter "Produit non trouvé" qui est moche sur les réseaux sociaux.
+  // Les réseaux sociaux utiliseront peut-être le cache ou le titre par défaut du site.
   if (error || !product || !shop) {
-    return [
-      { title: "Produit non trouvé" },
-      { name: "description", content: "Le produit demandé n'a pas pu être trouvé" },
-      { name: "robots", content: "noindex, nofollow" }
-    ];
+    return [];
   }
 
   const productName = product.product_name;
