@@ -100,11 +100,14 @@ const fetchCountryData = async (): Promise<CountryData[]> => {
   try {
     console.log("🌐 Chargement des pays depuis l'API");
     const response = await fetch(
-      "https://restcountries.com/v3.1/all?fields=name,cca2,idd,flag,currencies"
+       "https://restcountries.com/v3.1/all?fields=name,cca2,cca3,idd,flag,currencies"
     );
     const countries = await response.json();
 
-    const processedCountries = countries
+    const allowedCca3 = new Set(['BEN','BFA','CIV','CMR','COD','COG','GAB','KEN','RWA','SEN','SLE','TGO','UGA','ZMB']);
+    const filteredCountries = countries.filter((country: any) => allowedCca3.has(country.cca3));
+
+    const processedCountries = filteredCountries
       .map((country: any) => ({
         name: country.name.common,
         code: country.cca2,
