@@ -538,7 +538,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     ) {
       setPaymentUrl(actionData.payment_url);
       setShowRedirectDialog(true);
-      setRedirectCountdown(3);
+      setRedirectCountdown(2);
 
       console.log("🔄 Redirection vers:", actionData.payment_url);
     }

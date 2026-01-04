@@ -9,7 +9,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       limit: 20,
       sortBy: 'created_at',
       sortOrder: 'desc'
-    });
+    }, request);
     return {
       featuredProducts: productsResponse.products.slice(0, 6),
       allProducts: productsResponse.products,

@@ -21,7 +21,51 @@ export class ProductService {
     }
   }
 
-  static async getProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
+  /**
+   * Extrait les informations du tenant depuis la requête (pour le SSR)
+   */
+  private static getHeadersFromRequest(request?: Request): Record<string, string> {
+    if (!request) return {};
+    
+    try {
+      const url = new URL(request.url);
+      const hostname = url.hostname;
+      const parts = hostname.split('.');
+      
+      let subdomain: string | null = null;
+      let domain: string;
+      let tenantId: string;
+
+      // Gérer différents cas : localhost, sous-domaine.domain.com, domain.com
+      if (parts.length > 2) {
+        // Cas avec sous-domaine : tenant.example.com
+        subdomain = parts[0];
+        domain = parts.slice(1).join('.');
+        tenantId = subdomain;
+      } else {
+        // Cas sans sous-domaine : example.com
+        domain = hostname;
+        tenantId = domain.replace(/\./g, '-'); // Remplacer les points par des tirets
+      }
+
+      const headers: Record<string, string> = {
+        'X-Tenant-Domain': hostname,
+        'X-Tenant-ID': tenantId,
+      };
+
+      if (subdomain) {
+        headers['X-Tenant-Subdomain'] = subdomain;
+      }
+      
+      console.log('🔍 SSR Headers generated:', headers);
+      return headers;
+    } catch (error) {
+      console.error('Error generating headers from request:', error);
+      return {};
+    }
+  }
+
+  static async getProducts(filters: ProductFilters = {}, request?: Request): Promise<ProductsResponse> {
     try {
       const params = new URLSearchParams();
       
@@ -43,7 +87,10 @@ export class ProductService {
       
       console.log('🔍 Fetching products from: getProducts', endpoint);
       
-      const response = await apiClient.get<ProductsResponse>(endpoint);
+      // Générer les headers si la requête est fournie (SSR)
+      const headers = this.getHeadersFromRequest(request);
+      
+      const response = await apiClient.get<ProductsResponse>(endpoint, { headers });
       console.log('✅ Products fetched successfully:', response);
       return response;
     } catch (error) {
@@ -55,7 +102,8 @@ export class ProductService {
   static async getProductDetails(
     slug: string, 
     reviewsPage: number = 1, 
-    reviewsLimit: number = 10
+    reviewsLimit: number = 10,
+    request?: Request
   ): Promise<ProductDetailsResponse> {
     try {
       const params = new URLSearchParams();
@@ -73,7 +121,10 @@ export class ProductService {
       const endpoint = `/products/shop/client/product/${slug}${queryString ? `?${queryString}` : ''}`;
       console.log('🔍 Fetching product details from:', endpoint);
       
-      const response = await apiClient.get<ProductDetailsResponse>(endpoint);
+      // Générer les headers si la requête est fournie (SSR)
+      const headers = this.getHeadersFromRequest(request);
+      
+      const response = await apiClient.get<ProductDetailsResponse>(endpoint, { headers });
       return response;
     } catch (error) {
       console.error(`❌ Error fetching product details for ${slug}:`, error);

@@ -46,10 +46,10 @@ export function HomePage({ loaderData }: HomePageProps) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-              {shop?.name ? `Bienvenue chez ${shop.name}` : 'Des produits digitaux, disponibles instantanément.'}
+              {shop?.name || 'Des produits digitaux, disponibles instantanément.'}
             </h1>
             <p className="text-lg text-muted-foreground mb-8" dangerouslySetInnerHTML={{
-              __html: shop?.description || 'Découvrez notre sélection de produits numériques de qualité, téléchargeables immédiatement après achat.'
+              __html: shop?.description || 'Sélection de produits numériques de qualité, téléchargeables immédiatement après achat.'
             }} />
             <Button size="lg" asChild>
               <a href="#products">Voir les produits</a>

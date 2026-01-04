@@ -3,6 +3,47 @@ import { ProductService } from "~/services/productService";
 import { ProductDetailPage } from "~/pages/ProductDetailPage";
 import { ErrorPageVariants } from "~/pages/ErrorPage";
 
+export async function loader({
+  params,
+  request,
+}: Route.LoaderArgs) {
+  try {
+    const { slug } = params;
+    
+    if (!slug) {
+      throw new Error('Slug du produit manquant');
+    }
+
+    const url = new URL(request.url);
+    const reviewsPage = parseInt(url.searchParams.get('reviews_page') || '1');
+    const reviewsLimit = parseInt(url.searchParams.get('reviews_limit') || '10');
+
+    console.log('🔍 SSR Loading product details for slug:', slug);
+    // Passer la requête pour le contexte tenant en SSR
+    const response = await ProductService.getProductDetails(slug, reviewsPage, reviewsLimit, request);
+    
+    return {
+      product: response.product,
+      customFields: response.custom_fields,
+      faqItems: response.faq_items,
+      reviews: response.reviews,
+      shop: response.shop,
+      error: null
+    };
+  } catch (error) {
+    console.error('❌ SSR Product detail loader error:', error);
+    
+    return {
+      product: null,
+      customFields: [],
+      faqItems: [],
+      reviews: null,
+      shop: null,
+      error: error instanceof Error ? error.message : 'Erreur de chargement du produit'
+    };
+  }
+}
+
 export async function clientLoader({
   params,
   request,
