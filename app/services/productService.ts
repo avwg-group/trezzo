@@ -28,8 +28,20 @@ export class ProductService {
     if (!request) return {};
     
     try {
-      const url = new URL(request.url);
-      const hostname = url.hostname;
+      // 1. Tenter de récupérer le hostname depuis les headers (plus fiable derrière un proxy)
+      let hostname = request.headers.get('X-Forwarded-Host') || request.headers.get('Host');
+      
+      // 2. Fallback sur l'URL de la requête
+      if (!hostname) {
+        const url = new URL(request.url);
+        hostname = url.hostname;
+      }
+      
+      // Nettoyer le hostname (retirer le port si présent)
+      hostname = hostname.split(':')[0];
+      
+      console.log('🔍 SSR Hostname detected:', hostname);
+
       const parts = hostname.split('.');
       
       let subdomain: string | null = null;
@@ -37,15 +49,16 @@ export class ProductService {
       let tenantId: string;
 
       // Gérer différents cas : localhost, sous-domaine.domain.com, domain.com
-      if (parts.length > 2) {
+      // Note: localhost est traité comme un domaine racine
+      if (hostname === 'localhost' || parts.length <= 2) {
+         // Cas sans sous-domaine ou localhost : example.com
+         domain = hostname;
+         tenantId = domain.replace(/\./g, '-');
+      } else {
         // Cas avec sous-domaine : tenant.example.com
         subdomain = parts[0];
         domain = parts.slice(1).join('.');
         tenantId = subdomain;
-      } else {
-        // Cas sans sous-domaine : example.com
-        domain = hostname;
-        tenantId = domain.replace(/\./g, '-'); // Remplacer les points par des tirets
       }
 
       const headers: Record<string, string> = {
