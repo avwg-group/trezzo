@@ -9,8 +9,9 @@ export class ProductService {
       const locationData = await LocationService.getLocationData();
       const currency = locationData?.currency || null;
       
-      // Si la devise n'est pas XAF, XOF ou CDF, utiliser XAF par défaut
-      if (currency && !['XAF', 'XOF', 'CDF'].includes(currency)) {
+      // Si la devise n'est pas supportée, utiliser XAF par défaut
+      const supportedCurrencies = ['XAF', 'XOF', 'CDF', 'KES', 'RWF', 'SLE', 'UGX', 'ZMW'];
+      if (currency && !supportedCurrencies.includes(currency)) {
         return 'XAF';
       }
       

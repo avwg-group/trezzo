@@ -125,15 +125,8 @@ const fetchCountryData = async (): Promise<CountryData[]> => {
     return processedCountries;
   } catch (error) {
     console.error("Erreur lors du chargement des pays:", error);
-    // Fallback avec quelques pays essentiels
+    // Fallback avec quelques pays essentiels de la liste autorisée
     const fallbackCountries = [
-      {
-        name: "France",
-        code: "FR",
-        dialCode: "+33",
-        flag: "🇫🇷",
-        currency: "EUR",
-      },
       {
         name: "Cameroun",
         code: "CM",
@@ -149,18 +142,25 @@ const fetchCountryData = async (): Promise<CountryData[]> => {
         currency: "XOF",
       },
       {
-        name: "Canada",
-        code: "CA",
-        dialCode: "+1",
-        flag: "🇨🇦",
-        currency: "CAD",
+        name: "Côte d'Ivoire",
+        code: "CI",
+        dialCode: "+225",
+        flag: "🇨🇮",
+        currency: "XOF",
       },
       {
-        name: "Maroc",
-        code: "MA",
-        dialCode: "+212",
-        flag: "🇲🇦",
-        currency: "MAD",
+        name: "RDC",
+        code: "CD",
+        dialCode: "+243",
+        flag: "🇨🇩",
+        currency: "CDF",
+      },
+      {
+        name: "Kenya",
+        code: "KE",
+        dialCode: "+254",
+        flag: "🇰🇪",
+        currency: "KES",
       },
     ];
 
@@ -245,11 +245,9 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const from = originalCurrency || shop?.currency || 'EUR';
     let to = selectedCountry?.currency;
 
-    // Si un pays est sélectionné mais n'est pas XAF/XOF/CDF, forcer USD
+    // Si un pays est sélectionné, utiliser sa devise (plus de fallback USD forcé)
     if (selectedCountry) {
-      if (!['XAF', 'XOF', 'CDF'].includes(selectedCountry.currency || '')) {
-        to = 'USD';
-      }
+      to = selectedCountry.currency;
     } else {
       to = from;
     }
@@ -263,17 +261,32 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const f = norm(from);
     const t = norm(to);
     const getFixedRate = (f: string, t: string): number => {
-      if (f === 'EUR' && (t === 'XAF' || t === 'XOF')) return 700;
-      if (t === 'EUR' && (f === 'XAF' || f === 'XOF')) return 1 / 700;
-      if (f === 'EUR' && t === 'CDF') return 3000;
-      if (t === 'EUR' && f === 'CDF') return 1 / 3000;
-      if ((f === 'XAF' || f === 'XOF  ') && t === 'CDF') return 3000 / 700;
-      if (f === 'CDF' && (t === 'XAF' || t === 'XOF')) return 700 / 3000;
-      
-      // Fallback USD avec taux fixe (1 EUR = 1.1 USD)
-      if (f === 'EUR' && t === 'USD') return 1.1;
-      if (t === 'EUR' && f === 'USD') return 1 / 1.1;
-      
+      // Taux de référence par rapport à 1 EUR (avec marge de sécurité ~3-5% pour couvrir les fluctuations)
+      const rates: Record<string, number> = {
+        'EUR': 1,
+        'USD': 1.15,    // Marge sur le dollar
+        'XAF': 660,     // 655.957 -> 660
+        'XOF': 660,     // 655.957 -> 660
+        'CDF': 2900,    // 2800 -> 2900
+        'KES': 155,     // 145 -> 155
+        'RWF': 1450,    // 1400 -> 1450
+        'SLE': 26,      // 24 -> 26
+        'UGX': 4250,    // 4000 -> 4100
+        'ZMW': 29,      // 27 -> 29
+        'NGN': 1700,    // Marge Nigeria
+        'GHS': 16,      // Marge Ghana
+      };
+
+      const rateFrom = rates[f];
+      const rateTo = rates[t];
+
+      // Si les deux taux sont connus, on calcule le taux croisé
+      if (rateFrom && rateTo) {
+        return rateTo / rateFrom;
+      }
+
+      // Fallback si devise inconnue : on garde le montant tel quel (taux 1)
+      console.warn(`Taux de change inconnu pour ${f} -> ${t}`);
       return 1;
     };
     setExchangeRate(getFixedRate(f, t));
@@ -294,7 +307,7 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
   };
 
   // Calculs de prix simplifiés et corrigés
-  const getFractionDigits = (currency?: string) => (currency && ["XAF","XOF","JPY","KRW"].includes(currency) ? 0 : 2);
+  const getFractionDigits = (currency?: string) => (currency && ["XAF","XOF","RWF","UGX","JPY","KRW","BIF","GNF"].includes(currency) ? 0 : 2);
   const formatAmount = (amount: number, currency?: string) => {
     const digits = getFractionDigits(currency);
     return `${amount.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${currency || ''}`.trim();
@@ -348,12 +361,10 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
 
     const finalPrice = Math.max(0, basePrice - discountAmount);
     
-    // Déterminer la devise cible (XAF/XOF/CDF ou USD)
+    // Déterminer la devise cible (celle du pays sélectionné)
     let currency = shop?.currency || 'EUR';
     if (selectedCountry) {
-      currency = ['XAF', 'XOF', 'CDF'].includes(selectedCountry.currency || '') 
-        ? selectedCountry.currency 
-        : 'USD';
+      currency = selectedCountry.currency;
     }
 
     // Calcul des économies totales (promo + réduction)
@@ -365,9 +376,10 @@ export function CheckoutPage({ loaderData, actionData }: CheckoutPageProps) {
     const targetCurrency = currency;
     const rate = sourceCurrency === targetCurrency ? 1 : exchangeRate;
 
-    const baseConverted = basePrice * rate;
-    const originalConverted = originalPrice * rate;
-    const discountConverted = discountAmount * rate;
+    // Arrondi supérieur pour éviter les virgules et sécuriser le montant
+    const baseConverted = Math.ceil(basePrice * rate);
+    const originalConverted = Math.ceil(originalPrice * rate);
+    const discountConverted = Math.ceil(discountAmount * rate);
     const finalConverted = Math.max(0, baseConverted - discountConverted);
     const totalSavingsConverted = originalConverted - finalConverted;
 
