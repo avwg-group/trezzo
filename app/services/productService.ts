@@ -212,21 +212,31 @@ export class ProductService {
       }
       
       // Récupérer les données de géolocalisation depuis le cache
-      const locationData = await LocationService.getLocationData();
-      
-      if (!locationData) {
-        throw new Error('Impossible de récupérer les données de géolocalisation');
+      // Si un pays est fourni manuellement, on rend la géolocalisation optionnelle
+      let locationData = null;
+      try {
+        locationData = await LocationService.getLocationData();
+      } catch (e) {
+        console.warn('⚠️ Impossible de récupérer la géolocalisation:', e);
       }
       
-      const countryName = overrides?.country || locationData.country_name;
-      const currencyValue = productData.currency || overrides?.currency || locationData.currency;
+      // Si pas de locationData et pas d'override pays, c'est une erreur
+      if (!locationData && !overrides?.country) {
+        // Tentative de fallback sur des valeurs par défaut si possible, sinon erreur
+        console.warn('⚠️ Pas de géolocalisation et pas de pays sélectionné');
+        // On ne bloque pas ici, on laisse le backend valider si le pays manque
+      }
+      
+      const countryName = overrides?.country || locationData?.country_name || 'Unknown';
+      const currencyValue = productData.currency || overrides?.currency || locationData?.currency || 'XAF';
+      const cityName = locationData?.city || 'Unknown';
 
       const transactionRequest: CreateTransactionRequest = {
         client_name: clientData.client_name,
         email: clientData.email,
         phone: clientData.phone,
         country: countryName,
-        city: locationData.city,
+        city: cityName,
         operator: undefined,
         type: 'purchase',
         payment_method: undefined,

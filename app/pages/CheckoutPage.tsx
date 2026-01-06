@@ -107,7 +107,7 @@ const fetchCountryData = async (): Promise<CountryData[]> => {
 
     const processedCountries = filteredCountries
       .map((country: any) => ({
-        name: country.name.common,
+        name: country.translations?.fra?.common || country.name.common,
         code: country.cca2,
         dialCode: country.idd?.root
           ? `${country.idd.root}${country.idd.suffixes?.[0] || ""}`
