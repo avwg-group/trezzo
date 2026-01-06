@@ -143,6 +143,7 @@ export async function clientAction({
         
         const selectedCountryCurrency = formData.get('selectedCountryCurrency') as string | null;
         const selectedCountryName = formData.get('selectedCountryName') as string | null;
+        const selectedCountryCode = formData.get('selectedCountryCode') as string | null;
 
         const transactionResponse = await ProductService.createTransaction(
           clientData,
@@ -150,7 +151,8 @@ export async function clientAction({
           discountId,
           {
             currency: selectedCountryCurrency || undefined,
-            country: selectedCountryName || undefined
+            // Utiliser le code ISO (ex: CM, CI) en priorité car plus fiable pour le backend
+            country: selectedCountryCode || selectedCountryName || undefined
           }
         );
         
